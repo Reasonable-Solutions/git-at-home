@@ -1,0 +1,41 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: repositories.vcs.example.com
+spec:
+  group: vcs.example.com
+  names:
+    kind: Repository
+    plural: repositories
+    singular: repository
+    shortNames:
+    - repo
+  scope: Namespaced
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            required: ["url"]
+            properties:
+              url:
+                type: string
+              sshKeys:
+                type: string
+              branch:
+                type: string
+                default: "main"
+          status:
+            type: object
+            properties:
+              ready:
+                type: boolean
+              address:
+                type: string
+              sshPort:
+                type: integer

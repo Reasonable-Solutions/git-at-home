@@ -1,0 +1,11 @@
+apiVersion: builds.example.com/v1
+kind: BuildJob
+metadata:
+  name: my-build
+spec:
+  repository: https://github.com/myorg/myrepo
+  branch: main
+  flakeTarget: .#docker
+  resources:
+    memory: "4Gi"
+    cpu: "1"

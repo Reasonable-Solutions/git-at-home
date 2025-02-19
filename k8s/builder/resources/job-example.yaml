@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nix-build-job
+spec:
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      containers:
+      - name: nix-builder
+        image: nixos/nix
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "1"
+          limits:
+            memory: "4Gi"
+            cpu: "1"
+        command:
+        - /bin/sh
+        - -c
+        - |
+          git clone https://github.com/myorg/myrepo && \
+          cd myrepo && \
+          nix build .#docker
+      restartPolicy: Never

@@ -1,0 +1,70 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: git-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: git-server
+  template:
+    spec:
+      containers:
+      - name: git-manager
+        image: git-manager ...
+      - name: git-server
+        image: alpine/git:latest
+        # GIT-SSH FFS
+        command: ["/usr/bin/git", "daemon", "--reuseaddr", "--base-path=/git", "--export-all"]
+        ports:
+        - containerPort: 9418
+        volumeMounts:
+        - name: repo-storage
+          mountPath: /git
+        # NEEDS A MANAGER
+        - name: ssh-keys
+          mountPath: /root/.ssh
+      volumes:
+      - name: repo-storage
+        persistentVolumeClaim:
+          claimName: repo-storage
+      - name: ssh-keys
+        secret:
+          secretName: git-ssh-keys
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: git-server
+spec:
+  selector:
+    app: git-server
+  ports:
+  - port: 9418
+    targetPort: 9418
+    name: git
+  - port: 22
+    targetPort: 22
+    name: ssh
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: repo-storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+# THIS IS DUMB, WE PUBKEY
+apiVersion: v1
+kind: Secret
+metadata:
+  name: git-ssh-keys
+type: Opaque
+data:
+  id_rsa: <base64-encoded-private-key>
+  id_rsa.pub: <base64-encoded-public-key>
