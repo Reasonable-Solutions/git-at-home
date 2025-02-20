@@ -236,7 +236,7 @@ fn create_build_job(
                 git clone {} /workspace
                 cd /workspace
                 {}
-                nix build .#{} --json
+                nix --extra-experimental-features nix-command --extra-experimental-features flakes build .#{}
                 "#,
                 build.spec.git_repo,
                 build

@@ -90,7 +90,7 @@ let
               serviceAccountName = pname;
               containers = [{
                 name = pname;
-                image = "${pname}:latest";
+                image = "${pname}:IV";
                 imagePullPolicy = "Never";
                 env = [{
                   name = "RUST_LOG";

@@ -1,0 +1,9 @@
+apiVersion: build.example.com/v1alpha1
+kind: NixBuild
+metadata:
+  name: example-build-5
+spec:
+  git_repo: "https://github.com/nais/cli.git"
+  git_ref: "main"          # optional
+  nix_attr: "packages.aarch64-linux.nais"  # optional
+  image_name: "nixos/nix:latest"
