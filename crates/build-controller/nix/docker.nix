@@ -90,7 +90,8 @@ let
               serviceAccountName = pname;
               containers = [{
                 name = pname;
-                image = "${pname}:${version}";
+                image = "${pname}:latest";
+                imagePullPolicy = "Never";
                 env = [{
                   name = "RUST_LOG";
                   value = "info";
@@ -105,7 +106,7 @@ let
     echo '${
       builtins.toJSON {
         apiVersion = "rbac.authorization.k8s.io/v1";
-        kind = "Role";
+        kind = "ClusterRole";
         metadata = {
           name = pname;
           namespace = "default";
@@ -128,18 +129,15 @@ let
     echo '${
       builtins.toJSON {
         apiVersion = "rbac.authorization.k8s.io/v1";
-        kind = "RoleBinding";
-        metadata = {
-          name = pname;
-          namespace = "default";
-        };
+        kind = "ClusterRoleBinding";
+        metadata = { name = pname; };
         subjects = [{
           kind = "ServiceAccount";
           name = pname;
           namespace = "default";
         }];
         roleRef = {
-          kind = "Role";
+          kind = "ClusterRole";
           name = pname;
           apiGroup = "rbac.authorization.k8s.io";
         };

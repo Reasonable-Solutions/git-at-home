@@ -285,22 +285,33 @@ fn error_policy(_resource: Arc<NixBuild>, _error: &Error, _ctx: Arc<ContextData>
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     tracing_subscriber::fmt::init();
-    let client = Client::try_default().await?;
+    tracing::info!("SA token path exists: {}", std::path::Path::new("/var/run/secrets/kubernetes.io/serviceaccount/token").exists());
 
-    // Register CRD
-    let crd = NixBuild::crd();
-    println!("Registering CRD: {}", serde_yaml::to_string(&crd).unwrap());
+    tracing::info!("Starting NixBuild controller");
 
-    let builds: Api<NixBuild> = Api::all(client.clone());
-    let context = Arc::new(ContextData {
-        client: client.clone(),
-    });
+    let client = match Client::try_default().await {
+        Ok(c) => {
+            tracing::info!("Successfully created Kubernetes client");
+            c
+        },
+        Err(e) => {
+            tracing::error!("Failed to create Kubernetes client: {}", e);
+            return Err(e.into());
+        }
+    };
 
-    println!("Starting controller for NixBuild resources");
+    tracing::info!("Successfully created Kubernetes client");
+
+    let context = Arc::new(ContextData { client: client.clone() });
+
+    let builds: Api<NixBuild> = Api::all(client);
+    tracing::info!("Watching NixBuild resources across all namespaces");
+
     Controller::new(builds, Default::default())
         .run(reconcile, error_policy, context)
         .for_each(|_| futures::future::ready(()))
         .await;
 
+    tracing::info!("Controller shutdown complete");
     Ok(())
 }
