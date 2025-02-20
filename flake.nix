@@ -102,6 +102,9 @@
           cargoExtraArgs = "-p git-service";
           src = fileSetForCrate ./crates/git-service;
         });
+        controller = pkgs.callPackage ./crates/build-controller/nix/docker.nix {
+          rustBinary = build-controller;
+        };
 
       in {
         checks = {
@@ -166,17 +169,18 @@
 
         packages = {
           inherit build-controller repo-controller git-service;
+          build-controller-image = controller.image;
+          build-controller-manifests = controller.manifests;
         } // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
           my-workspace-llvm-coverage = craneLibLLvmTools.cargoLlvmCov
             (commonArgs // { inherit cargoArtifacts; });
         };
 
         apps = {
-          build-controller = flake-utils.lib.mkApp { drv = build-controller; };
+          inherit build-controller;
           repo-controller = flake-utils.lib.mkApp { drv = repo-controller; };
           git-service = flake-utils.lib.mkApp { drv = git-service; };
         };
-
         devShells.default = craneLib.devShell {
           # Inherit inputs from checks.
           checks = self.checks.${system};
