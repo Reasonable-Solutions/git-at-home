@@ -1,7 +1,7 @@
 { pkgs ? import <nixpkgs> { } }:
 
 let
-  dockerImage = pkgs.dockerTools.buildImage {
+  image = pkgs.dockerTools.buildImage {
     name = "nix-serve";
     tag = "latest";
     contents = with pkgs; [ nix-serve nix cacert ];
@@ -12,7 +12,7 @@ let
     };
   };
 
-  k8sYaml = pkgs.writeText "k8s.yaml" ''
+  manifests = pkgs.writeText "k8s.yaml" ''
     apiVersion: v1
     kind: PersistentVolumeClaim
     metadata:
@@ -40,15 +40,16 @@ let
         spec:
           containers:
           - name: nix-serve
-            image: nix-serve:latest
+            image: nix-serve-service:VII
+            imagePullPolicy: Never
             ports:
             - containerPort: 5000
             volumeMounts:
             - name: nix-store
-              mountPath: /nix/store
+              mountPath: /var/cache
           volumes:
           - name: nix-store
             persistentVolumeClaim:
               claimName: nix-store-pvc
   '';
-in { inherit dockerImage k8sYaml; }
+in { inherit image manifests; }

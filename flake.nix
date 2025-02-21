@@ -107,7 +107,7 @@
         };
 
         nix-serve-service =
-          pkgs.callPackage ./crate/nix-serve-service/nix/docker.nix { };
+          pkgs.callPackage ./crates/nix-serve-service/nix/docker.nix { };
 
       in {
         checks = {
