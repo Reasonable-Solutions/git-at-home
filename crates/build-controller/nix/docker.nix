@@ -32,7 +32,7 @@ let
               serviceAccountName = pname;
               containers = [{
                 name = pname;
-                image = "${pname}:VII";
+                image = "${pname}:VIII";
                 imagePullPolicy = "Never";
                 env = [{
                   name = "RUST_LOG";
@@ -64,7 +64,8 @@ let
             # Subresources appears to need to be explicitly specified v0v
             resources = [ "nixbuilds" "nixbuilds/status" ];
 
-            verbs = [ "get" "list" "watch" "update" ];
+            # TODO:  Create only exists here for creating nixbuilds/status, not nixbuilds.
+            verbs = [ "get" "list" "watch" "update" "create" "patch" ];
           }
         ];
       }

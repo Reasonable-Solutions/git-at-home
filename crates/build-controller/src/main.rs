@@ -236,8 +236,8 @@ fn create_build_job(
     Ok(job)
 }
 
-fn error_policy(_resource: Arc<NixBuild>, _error: &Error, _ctx: Arc<ContextData>) -> Action {
-    tracing::error!("did an error");
+fn error_policy(_resource: Arc<NixBuild>, error: &Error, _ctx: Arc<ContextData>) -> Action {
+    tracing::error!("did an error {:?}", error);
     Action::requeue(Duration::from_secs(60))
 }
 

@@ -25,6 +25,9 @@ pub struct BuildCondition {
     printcolumn = r#"{"name":"status", "jsonPath":".status.phase", "type":"string"}"#,
     printcolumn = r#"{"name":"age", "jsonPath":".metadata.creationTimestamp", "type":"date"}"#
 )]
+
+// TODO: All these guys with snake case needs to be k8s cased.
+// serde(rename = "... ")
 pub struct NixBuildSpec {
     pub git_repo: String,
     pub git_ref: Option<String>,
