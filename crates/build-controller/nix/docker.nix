@@ -1,5 +1,6 @@
 { pkgs, rustBinary }:
 
+# TOOD: all of these guys should have a labels saying where tehy come from
 let
   pname = "nix-build-controller";
   version = "0.1.0";
@@ -90,7 +91,7 @@ let
               serviceAccountName = pname;
               containers = [{
                 name = pname;
-                image = "${pname}:IV";
+                image = "${pname}:VII";
                 imagePullPolicy = "Never";
                 env = [{
                   name = "RUST_LOG";

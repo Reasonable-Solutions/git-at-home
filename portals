@@ -1,0 +1,18 @@
+-*- mode: portal -*-
+
+portal_MzUzMzkwZDcwNDM2NzAyZ
+# (0) docker build -t nix-build-controller:VII .
+# /Users/carl/source/github-at-home/
+# #13 sha256:17f07b01a4e71b00b7713e86f70ba65c15aa40008ec3dcd938c981ac0fce379c
+# #13 exporting layers done
+# #13 writing image sha256:9a0c211417006f623370ac15d818e93948efd2da2657ebc445e7a
+# #13 naming to docker.io/library/nix-build-controller:VII done
+# #13 DONE 0.0s
+
+portal_NmQ1NmY4NTc1MDFkNDgzY
+# (0) nix build .#build-controller-manifests
+# /Users/carl/source/github-at-home/
+# warning: Git tree '/Users/carl/source/github-at-home' is dirty
+# this derivation will be built:
+#   /nix/store/xyjb1kxpxyrryj8gsykl2fb213jdvbmn-build-controller-manifests.drv
+# building '/nix/store/xyjb1kxpxyrryj8gsykl2fb213jdvbmn-build-controller-manifes

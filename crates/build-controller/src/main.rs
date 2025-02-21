@@ -13,86 +13,7 @@ use std::sync::Arc;
 use thiserror::Error;
 use tokio::time::Duration;
 
-#[derive(Deserialize, Serialize, Clone, Debug, JsonSchema)]
-pub struct BuildCondition {
-    #[serde(rename = "type")]
-    pub type_: String,
-    pub status: String,
-    pub reason: String,
-    pub message: String,
-    pub last_transition_time: Option<String>,
-    pub observed_generation: Option<i64>,
-}
-
-#[derive(CustomResource, Deserialize, Serialize, Clone, Debug, JsonSchema)]
-#[kube(
-    group = "build.example.com",
-    version = "v1alpha1",
-    kind = "NixBuild",
-    namespaced,
-    status = "NixBuildStatus",
-    printcolumn = r#"{"name":"status", "jsonPath":".status.phase", "type":"string"}"#,
-    printcolumn = r#"{"name":"age", "jsonPath":".metadata.creationTimestamp", "type":"date"}"#
-)]
-pub struct NixBuildSpec {
-    pub git_repo: String,
-    pub git_ref: Option<String>,
-    pub nix_attr: Option<String>,
-    pub image_name: String,
-}
-
-#[derive(Deserialize, Serialize, Clone, Debug, JsonSchema, Default)]
-pub struct NixBuildStatus {
-    pub phase: String,
-    pub job_name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(default)]
-    pub conditions: Vec<BuildCondition>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub observed_generation: Option<i64>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub last_transition_time: Option<String>,
-}
-
-impl NixBuildStatus {
-    fn needs_update(&self, new_status: &NixBuildStatus) -> bool {
-        self.phase != new_status.phase
-            || self.job_name != new_status.job_name
-            || self.message != new_status.message
-            || self.observed_generation != new_status.observed_generation
-            || self.conditions.len() != new_status.conditions.len()
-            || self
-                .conditions
-                .iter()
-                .zip(new_status.conditions.iter())
-                .any(|(a, b)| a.status != b.status || a.message != b.message)
-    }
-
-    fn set_condition(&mut self, type_: &str, status: &str, reason: &str, message: &str) {
-        let now = Utc::now().to_rfc3339();
-
-        if let Some(existing) = self.conditions.iter_mut().find(|c| c.type_ == type_) {
-            if existing.status != status || existing.message != message {
-                existing.last_transition_time = Some(now.clone());
-                existing.status = status.to_string();
-                existing.reason = reason.to_string();
-                existing.message = message.to_string();
-                self.last_transition_time = Some(now);
-            }
-        } else {
-            self.conditions.push(BuildCondition {
-                type_: type_.to_string(),
-                status: status.to_string(),
-                reason: reason.to_string(),
-                message: message.to_string(),
-                last_transition_time: Some(now.clone()),
-                observed_generation: None,
-            });
-            self.last_transition_time = Some(now);
-        }
-    }
-}
+use build_controller::*;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -114,7 +35,26 @@ async fn reconcile(build: Arc<NixBuild>, ctx: Arc<ContextData>) -> Result<Action
     let current_status = build.status.clone().unwrap_or_default();
     let mut new_status = current_status.clone();
 
+    let builds_list = builds.list(&Default::default()).await?;
+    let jobs_list = jobs.list(&Default::default()).await?;
+
+    tracing::info!(
+        "Reconciling, we currently have {} builds and {} jobs",
+        builds_list.items.len(),
+        jobs_list.items.len()
+    );
+
+    if new_status.phase == "Completed" || new_status.phase == "Failed" {
+        tracing::info!(
+            "Build {} is already {}, nothing to do",
+            build.name_any(),
+            new_status.phase
+        );
+        return Ok(Action::requeue(Duration::from_secs(300)));
+    }
+
     if new_status.observed_generation == build.metadata.generation {
+        tracing::info!("We've seen this guy before, generations match");
         // Nothing has changed in the spec, just check job status if it exists
         if let Some(job_name) = &new_status.job_name {
             if let Ok(job) = jobs.get(job_name).await {
@@ -131,31 +71,51 @@ async fn reconcile(build: Arc<NixBuild>, ctx: Arc<ContextData>) -> Result<Action
                 }
             }
         }
-        return Ok(Action::requeue(Duration::from_secs(300))); // Long requeue for up-to-date resources
+        // Hmm Something is very fucky here. 6105 pods??
+        return Ok(Action::requeue(Duration::from_secs(300)));
     }
 
     let job_name = format!("nixbuild-{}", build.name_any());
+
     new_status.job_name = Some(job_name.clone());
     new_status.phase = "Building".into();
     new_status.message = Some("Creating build job".into());
     new_status.observed_generation = build.metadata.generation;
+    tracing::info!("setting condition");
     new_status.set_condition("Ready", "False", "BuildStarting", "Creating new build job");
 
-    // does this job exist?
     match jobs.get(&job_name).await {
-        Ok(_) => {
-            // Job exists but spec changed - we should recreate it
-            jobs.delete(&job_name, &Default::default()).await?;
-            update_build_status(&builds, &build, new_status).await?;
-            return Ok(Action::requeue(Duration::from_secs(5)));
+        Ok(j) => {
+            tracing::info!("Job exists! {}", &job_name);
+            if let Some(status) = &j.status {
+                update_status_from_job(&mut new_status, &j);
+
+                if current_status.needs_update(&new_status) {
+                    update_build_status(&builds, &build, new_status).await?;
+                }
+
+                if status.active.unwrap_or(0) > 0 {
+                    return Ok(Action::requeue(Duration::from_secs(30)));
+                } else {
+                    return Ok(Action::requeue(Duration::from_secs(300)));
+                }
+            }
+            Ok(Action::requeue(Duration::from_secs(30)))
         }
-        Err(_) => {
-            // make an ew job
-            let owner_reference = build.controller_owner_ref(&()).unwrap();
-            let job = create_build_job(&build, job_name, owner_reference)?;
-            jobs.create(&Default::default(), &job).await?;
-            update_build_status(&builds, &build, new_status).await?;
-            return Ok(Action::requeue(Duration::from_secs(10))); // Quick requeue to check job status
+        Err(e) => {
+            // Only create new job if build isn't already complete/failed
+            if new_status.phase != "Completed" && new_status.phase != "Failed" {
+                let owner_reference = build.controller_owner_ref(&()).unwrap();
+                tracing::info!(
+                    "Creating a new job: {} owner: {:?}",
+                    &job_name,
+                    &owner_reference
+                );
+                let job = create_build_job(&build, job_name, owner_reference)?;
+                jobs.create(&Default::default(), &job).await?;
+                update_build_status(&builds, &build, new_status).await?;
+            }
+            Ok(Action::requeue(Duration::from_secs(10)))
         }
     }
 }
@@ -203,6 +163,7 @@ async fn update_build_status(
     build: &NixBuild,
     status: NixBuildStatus,
 ) -> Result<(), Error> {
+    tracing::info!("update status: {:?}", &build.metadata.name);
     let status_patch = serde_json::json!({
         "apiVersion": "build.example.com/v1alpha1",
         "kind": "NixBuild",
@@ -279,13 +240,17 @@ fn create_build_job(
 }
 
 fn error_policy(_resource: Arc<NixBuild>, _error: &Error, _ctx: Arc<ContextData>) -> Action {
+    tracing::error!("did an error");
     Action::requeue(Duration::from_secs(60))
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     tracing_subscriber::fmt::init();
-    tracing::info!("SA token path exists: {}", std::path::Path::new("/var/run/secrets/kubernetes.io/serviceaccount/token").exists());
+    tracing::info!(
+        "SA token path exists: {}",
+        std::path::Path::new("/var/run/secrets/kubernetes.io/serviceaccount/token").exists()
+    );
 
     tracing::info!("Starting NixBuild controller");
 
@@ -293,7 +258,7 @@ async fn main() -> Result<(), Error> {
         Ok(c) => {
             tracing::info!("Successfully created Kubernetes client");
             c
-        },
+        }
         Err(e) => {
             tracing::error!("Failed to create Kubernetes client: {}", e);
             return Err(e.into());
@@ -302,7 +267,9 @@ async fn main() -> Result<(), Error> {
 
     tracing::info!("Successfully created Kubernetes client");
 
-    let context = Arc::new(ContextData { client: client.clone() });
+    let context = Arc::new(ContextData {
+        client: client.clone(),
+    });
 
     let builds: Api<NixBuild> = Api::all(client);
     tracing::info!("Watching NixBuild resources across all namespaces");

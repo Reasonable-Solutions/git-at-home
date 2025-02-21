@@ -4,6 +4,11 @@ version.workspace = true
 edition.workspace = true
 publish = false
 
+[[bin]]
+name = "make-crd"
+path = "src/bin/make-crd.rs"
+
+
 [dependencies]
 axum = "0.7.5"
 common = { path = "../common" }
