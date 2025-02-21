@@ -106,6 +106,9 @@
           inherit build-controller;
         };
 
+        nix-serve-service =
+          pkgs.callPackage ./crate/nix-serve-service/nix/docker.nix { };
+
       in {
         checks = {
           # Build the crates as part of `nix flake check` for convenience
@@ -168,7 +171,8 @@
         };
 
         packages = {
-          inherit build-controller repo-controller git-service;
+          inherit build-controller repo-controller git-service
+            nix-serve-service;
           build-controller-image = controller.image;
           build-controller-manifests = controller.manifests;
         } // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
