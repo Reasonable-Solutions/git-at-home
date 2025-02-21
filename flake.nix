@@ -103,7 +103,7 @@
           src = fileSetForCrate ./crates/git-service;
         });
         controller = pkgs.callPackage ./crates/build-controller/nix/docker.nix {
-          rustBinary = build-controller;
+          inherit build-controller;
         };
 
       in {

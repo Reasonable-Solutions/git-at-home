@@ -1,11 +1,5 @@
-use k8s_openapi::api::batch::v1::{Job, JobSpec};
-use k8s_openapi::api::core::v1::{Container, PodSpec, PodTemplateSpec};
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::{ObjectMeta, OwnerReference};
 use k8s_openapi::chrono::Utc;
-use kube::{
-    runtime::controller::{Action, Controller},
-    Api, Client, CustomResource, CustomResourceExt, Resource, ResourceExt,
-};
+use kube::CustomResource;
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

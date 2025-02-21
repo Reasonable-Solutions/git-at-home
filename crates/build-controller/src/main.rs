@@ -2,13 +2,10 @@ use futures::StreamExt;
 use k8s_openapi::api::batch::v1::{Job, JobSpec};
 use k8s_openapi::api::core::v1::{Container, PodSpec, PodTemplateSpec};
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::{ObjectMeta, OwnerReference};
-use k8s_openapi::chrono::Utc;
 use kube::{
     runtime::controller::{Action, Controller},
-    Api, Client, CustomResource, CustomResourceExt, Resource, ResourceExt,
+    Api, Client, Resource, ResourceExt,
 };
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::time::Duration;
@@ -38,7 +35,7 @@ async fn reconcile(build: Arc<NixBuild>, ctx: Arc<ContextData>) -> Result<Action
     let builds_list = builds.list(&Default::default()).await?;
     let jobs_list = jobs.list(&Default::default()).await?;
 
-    tracing::info!(
+    tracing::info!( // How pods is this shitting out?
         "Reconciling, we currently have {} builds and {} jobs",
         builds_list.items.len(),
         jobs_list.items.len()

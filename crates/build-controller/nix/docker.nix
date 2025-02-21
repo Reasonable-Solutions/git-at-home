@@ -1,4 +1,4 @@
-{ pkgs, rustBinary }:
+{ pkgs, build-controller }:
 
 # TOOD: all of these guys should have a labels saying where tehy come from
 let
@@ -9,73 +9,14 @@ let
     name = pname;
     tag = version;
     config = {
-      Cmd = [ "${rustBinary}/bin/${pname}" ];
+      Cmd = [ "${build-controller}/bin/${pname}" ];
       Env = [ "RUST_LOG=info" ];
     };
   };
 
   manifests = pkgs.runCommand "build-controller-manifests" { } ''
     mkdir -p $out
-    echo '${
-      builtins.toJSON {
-        apiVersion = "apiextensions.k8s.io/v1";
-        kind = "CustomResourceDefinition";
-        metadata = { name = "nixbuilds.build.example.com"; };
-        spec = {
-          group = "build.example.com";
-          names = {
-            kind = "NixBuild";
-            plural = "nixbuilds";
-            singular = "nixbuild";
-            shortNames = [ "nb" ];
-          };
-          scope = "Namespaced";
-          versions = [{
-            name = "v1alpha1";
-            served = true;
-            storage = true;
-            schema = {
-              openAPIV3Schema = {
-                type = "object";
-                properties = {
-                  spec = {
-                    type = "object";
-                    properties = {
-                      git_repo = { type = "string"; };
-                      git_ref = {
-                        type = "string";
-                        nullable = true;
-                      };
-                      nix_attr = {
-                        type = "string";
-                        nullable = true;
-                      };
-                      image_name = { type = "string"; };
-                    };
-                    required = [ "git_repo" "image_name" ];
-                  };
-                  status = {
-                    type = "object";
-                    nullable = true;
-                    properties = {
-                      phase = { type = "string"; };
-                      job_name = {
-                        type = "string";
-                        nullable = true;
-                      };
-                      message = {
-                        type = "string";
-                        nullable = true;
-                      };
-                    };
-                  };
-                };
-              };
-            };
-          }];
-        };
-      }
-    }' > $out/crd.yaml
+    ${build-controller}/bin/make-crd > $out/crd.yaml
 
     echo '${
       builtins.toJSON {
@@ -120,7 +61,9 @@ let
           }
           {
             apiGroups = [ "build.example.com" ];
-            resources = [ "nixbuilds" ];
+            # Subresources appears to need to be explicitly specified v0v
+            resources = [ "nixbuilds" "nixbuilds/status" ];
+
             verbs = [ "get" "list" "watch" "update" ];
           }
         ];
