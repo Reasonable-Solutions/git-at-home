@@ -1,5 +1,8 @@
 * todo stuff
 Thins i would like to have on top of this:
+
+somehow Hakari is broken here. cant cargo hakari generate
+
 A repo controller that manages typical git metadata such as latest commit, HEAD, branches, Pull Requests, Merges etc (or several controllers).  (I'll build this eventually)
 
 A service for git-ssh with a little managment api on top. (I'll build this next)

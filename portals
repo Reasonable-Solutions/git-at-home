@@ -1,28 +1,32 @@
 -*- mode: portal -*-
 
-portal_MWFhMjFmYmExMGNkNzc4Z
-# (0) docker build -t nix-build-controller:RVI -f Dockerfile.build-controller .
-# #13 sha256:e58638ff10cd41c12f7893ed0545a2ee21052f9768447269ea35e2d8ea2ba649
-# #13 exporting layers 0.0s done
-# #13 writing image sha256:6184c131d1616e152ad0c630f5a482b1213b4661cf78e0183dc33
-# #13 naming to docker.io/library/nix-build-controller:RVI done
+portal_ZjY1NGUzOGJlY2Q0MTFmM
+# (0) docker build -t nix-build-controller:I -f Dockerfile.build-controller .
+# #13 sha256:597c8358287f72f89a814c365747a1780f64a7927435a96c80a8f5d26c9e24fd
+# #13 exporting layers done
+# #13 writing image sha256:f445f9b839bc408144c0c8d06d254714e1101bb5c10bf506ae383
+# #13 naming to docker.io/library/nix-build-controller:I done
 # #13 DONE 0.0s
 
-portal_MDY5NzkyNWU3MzE1MDEwO
+portal_YWIwMDllZGQzYzA0NWYwZ
 # (0) nix build .#build-controller-manifests
 # warning: Git tree '/Users/carl/source/github-at-home' is dirty
-
-
-portal_ZjU2MDlhODg4MTYxM2FjY
-# (0) docker build -t nix-serve-service:RI -f Dockerfile.nix-serve-service .
-# #14 exporting layers 0.1s done
-# #14 writing image sha256:0c9d965212ea91f5747af29a3a1cab3a5f1d0a00da66e00fc7869
-# #14 writing image sha256:0c9d965212ea91f5747af29a3a1cab3a5f1d0a00da66e00fc7869
-# #14 naming to docker.io/library/nix-serve-service:RI 0.0s done
-# #14 DONE 0.1s
-
-portal_NmYyYzUzYTdlYjM1NzJhM
-# (0) nix build .#nix-serve-service.manifests
 # this derivation will be built:
-#   /nix/store/hsnbrhnvk6gknk1i4xn25pskj2vbgc3y-k8s.yaml.drv
-# building '/nix/store/hsnbrhnvk6gknk1i4xn25pskj2vbgc3y-k8s.yaml.drv'...
+#   /nix/store/nxjg3p6rcjylvdh8ky7ag5bpgixjxn7c-build-controller-manifests.drv
+# building '/nix/store/nxjg3p6rcjylvdh8ky7ag5bpgixjxn7c-build-controller-manifes
+
+
+portal_MThkYWM1ZDI3N2NlMzcyM
+# (0) docker build -t nix-serve-service:I -f Dockerfile.nix-serve-service .
+# #14 sha256:bbc145738b67066f6ccef3ce7d7b10b8a9b0c37ad12038429d51471cd00c99d9
+# #14 exporting layers 0.0s done
+# #14 writing image sha256:0537c00f2fc7a24e4a3c7922b5b5d5c15e730ca0d9c06917887a5
+# #14 naming to docker.io/library/nix-serve-service:I done
+# #14 DONE 0.0s
+
+portal_MmMyYWM3YTQ2ZmFhNGUzZ
+# (0) nix build .#nix-serve-service.manifests
+# warning: Git tree '/Users/carl/source/github-at-home' is dirty
+# this derivation will be built:
+#   /nix/store/h44dc9cafp5lm50wlws5a3vrgp8419nl-k8s.yaml.drv
+# building '/nix/store/h44dc9cafp5lm50wlws5a3vrgp8419nl-k8s.yaml.drv'...
