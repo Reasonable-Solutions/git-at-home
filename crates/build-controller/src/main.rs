@@ -192,12 +192,9 @@ fn create_build_job(
             "/bin/sh".to_string(),
             "-c".to_string(),
             format!(
-                r#"#
-                cat > pbh.sh << 'EOF'
-                #!/usr/bin/env bash
-                nix --extra-experimental-features nix-command --extra-experimental-features flakes \
-                    copy --to http://{} $OUT_PATHS 2>> /tmp/pbh.log
-                EOF
+                r#"
+                echo '#!/usr/bin/env bash' >> pbh.sh
+                echo 'nix --extra-experimental-features nix-command --extra-experimental-features flakes copy --to http://{} $OUT_PATHS' >> pbh.sh
                 chmod +x pbh.sh
 
                 git clone {} /workspace
@@ -210,7 +207,7 @@ fn create_build_job(
                     build .#{} \
                     --post-build-hook ./pbh.sh
                     "#,
-                "nix-serve-service.default.cluster.local:3000",
+                "nix-serve.default.svc.cluster.local:3000",
                 build.spec.git_repo,
                 build
                     .spec
@@ -218,7 +215,7 @@ fn create_build_job(
                     .as_ref()
                     .map(|r| format!("git checkout {}", r))
                 .unwrap_or_default(),
-                "nix-serve-service.default.cluster.local:3000",
+                "nix-serve.default.svc.cluster.local:3000",
                 build
                     .spec
                     .nix_attr

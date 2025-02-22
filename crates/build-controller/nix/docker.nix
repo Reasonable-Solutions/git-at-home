@@ -13,7 +13,7 @@ let
       Env = [ "RUST_LOG=info" ];
     };
   };
-
+  # TODO: make-crd, the bin should be parametrized over pname too
   manifests = pkgs.runCommand "build-controller-manifests" { } ''
     mkdir -p $out
     ${build-controller}/bin/make-crd > $out/crd.yaml
@@ -32,7 +32,7 @@ let
               serviceAccountName = pname;
               containers = [{
                 name = pname;
-                image = "${pname}:RERUN";
+                image = "${pname}:RVI";
                 imagePullPolicy = "Never";
                 env = [{
                   name = "RUST_LOG";

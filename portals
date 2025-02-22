@@ -1,19 +1,16 @@
 -*- mode: portal -*-
 
-portal_ODg1OGFlM2JjM2JkZjIyZ
-# (0) docker build -t nix-build-controller:RI -f Dockerfile.build-controller .
-# #14 sha256:0c2c3164ae404f82860a25b19ca85cb1efb4035929b75f57301c8c5fb5161699
-# #14 exporting layers 0.0s done
-# #14 writing image sha256:53bc3d99798b421f63dbddf09afc9ff617a1a42f97c7a277c7865
-# #14 naming to docker.io/library/nix-build-controller:RI done
-# #14 DONE 0.0s
+portal_MWFhMjFmYmExMGNkNzc4Z
+# (0) docker build -t nix-build-controller:RVI -f Dockerfile.build-controller .
+# #13 sha256:e58638ff10cd41c12f7893ed0545a2ee21052f9768447269ea35e2d8ea2ba649
+# #13 exporting layers 0.0s done
+# #13 writing image sha256:6184c131d1616e152ad0c630f5a482b1213b4661cf78e0183dc33
+# #13 naming to docker.io/library/nix-build-controller:RVI done
+# #13 DONE 0.0s
 
-portal_ZGM5ZTg5OGNjNjM3YTdkM
+portal_MDY5NzkyNWU3MzE1MDEwO
 # (0) nix build .#build-controller-manifests
 # warning: Git tree '/Users/carl/source/github-at-home' is dirty
-# this derivation will be built:
-#   /nix/store/bl3bnvvi625g05cjn6gkx5fyj6i0sm1x-build-controller-manifests.drv
-# building '/nix/store/bl3bnvvi625g05cjn6gkx5fyj6i0sm1x-build-controller-manifes
 
 
 portal_ZjU2MDlhODg4MTYxM2FjY
@@ -24,9 +21,8 @@ portal_ZjU2MDlhODg4MTYxM2FjY
 # #14 naming to docker.io/library/nix-serve-service:RI 0.0s done
 # #14 DONE 0.1s
 
-portal_ZjRiYzMzNGM0YWY0YWM4N
+portal_NmYyYzUzYTdlYjM1NzJhM
 # (0) nix build .#nix-serve-service.manifests
-# warning: Git tree '/Users/carl/source/github-at-home' is dirty
 # this derivation will be built:
-#   /nix/store/wi3744gf8ybwl7xjhc52xkkj49gg43mb-k8s.yaml.drv
-# building '/nix/store/wi3744gf8ybwl7xjhc52xkkj49gg43mb-k8s.yaml.drv'...
+#   /nix/store/hsnbrhnvk6gknk1i4xn25pskj2vbgc3y-k8s.yaml.drv
+# building '/nix/store/hsnbrhnvk6gknk1i4xn25pskj2vbgc3y-k8s.yaml.drv'...
