@@ -187,25 +187,38 @@ fn create_build_job(
     let container = Container {
         name: "builder".to_string(),
         image: Some("nixos/nix:latest".to_string()),
+        // TODO: this shouldn't be a string ffs.
         command: Some(vec![
             "/bin/sh".to_string(),
             "-c".to_string(),
             format!(
-                r#"
-    git clone {} /workspace
-    cd /workspace
-    {}
-    nix --extra-experimental-features nix-command --extra-experimental-features flakes \
-        --option require-sigs false \
-        build .#{} \
-    "#,
+                r#"#
+                cat > pbh.sh << 'EOF'
+                #!/usr/bin/env bash
+                nix --extra-experimental-features nix-command --extra-experimental-features flakes \
+                    copy --to http://{} $OUT_PATHS 2>> /tmp/pbh.log
+                EOF
+                chmod +x pbh.sh
+
+                git clone {} /workspace
+                cd /workspace
+                {}
+                nix --extra-experimental-features nix-command --extra-experimental-features flakes \
+                    --option require-sigs false \
+                    --option substitute true \
+                    --option extra-substituters http://{} \
+                    build .#{} \
+                    --post-build-hook ./pbh.sh
+                    "#,
+                "nix-serve-service.default.cluster.local:3000",
                 build.spec.git_repo,
                 build
                     .spec
                     .git_ref
                     .as_ref()
                     .map(|r| format!("git checkout {}", r))
-                    .unwrap_or_default(),
+                .unwrap_or_default(),
+                "nix-serve-service.default.cluster.local:3000",
                 build
                     .spec
                     .nix_attr

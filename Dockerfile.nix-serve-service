@@ -1,6 +1,6 @@
 FROM rust:latest as builder
 WORKDIR /app
-COPY ./../../.. .
+COPY . .
 RUN cargo build --release --package nix-serve-service --workspace
 
 FROM debian:latest
