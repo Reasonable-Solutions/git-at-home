@@ -1,32 +1,36 @@
 -*- mode: portal -*-
 
-portal_OWNkMmM3NTg1OTgxMGQwZ
-# (0) docker build -t nix-build-controller:VIII .
-# #13 exporting layers 0.0s done
-# #13 writing image sha256:338fe98a8552d73e54924a03f43d4f65b5091765f0915b1c986c3
-# #13 naming to docker.io/library/nix-build-controller:VIII
-# #13 naming to docker.io/library/nix-build-controller:VIII done
+portal_NGZhMTBkZmQ1ZjVhZjVmM
+# (0) docker build -t nix-build-controller:RERUN .
+# /Users/carl/source/github-at-home/
+# #13 sha256:c2852663aca4bb1bd3b3f4abf776d039665094d2aeb3c4bfeb695d49fb298874
+# #13 exporting layers done
+# #13 writing image sha256:9a06cd4650b65e3c7ed66a1f50a1b7eabd2c7f4e5607f4a3aa174
+# #13 naming to docker.io/library/nix-build-controller:RERUN done
 # #13 DONE 0.0s
 
-portal_YTFlMTE1ZTc4MGJmNjRjY
+portal_ZGM5ZTg5OGNjNjM3YTdkM
 # (0) nix build .#build-controller-manifests
+# /Users/carl/source/github-at-home/
 # warning: Git tree '/Users/carl/source/github-at-home' is dirty
 # this derivation will be built:
-#   /nix/store/gnxjzy972mirpvry7d0n3h68lj0wh8v4-build-controller-manifests.drv
-# building '/nix/store/gnxjzy972mirpvry7d0n3h68lj0wh8v4-build-controller-manifes
+#   /nix/store/bl3bnvvi625g05cjn6gkx5fyj6i0sm1x-build-controller-manifests.drv
+# building '/nix/store/bl3bnvvi625g05cjn6gkx5fyj6i0sm1x-build-controller-manifes
 
 
-portal_OTg3ZjVhOGNkNDQ3YjhmM
-# (0) docker build -t nix-serve-service:VII crates/nix-serve-service
-# #15 sha256:71b49c59710a01fc7e77bade917d45d17dd2a14edff076ef9154f45736d899b6
-# #15 exporting layers done
-# #15 writing image sha256:b5c13362999c0e3148f610916ac29cc075e3357c4744ae3001cce
-# #15 naming to docker.io/library/nix-serve-service:VII done
-# #15 DONE 0.0s
+portal_NzBlNTJhMGNjNTA2YjQzZ
+# (0) docker build -t nix-serve-service:VIII crates/nix-serve-service
+# /Users/carl/source/github-at-home/
+# #15 exporting layers
+# #15 exporting layers 6.9s done
+# #15 writing image sha256:0a23b8910e2883af7f6ae5b062131e68128dfbd502be01a023eef
+# #15 naming to docker.io/library/nix-serve-service:VIII done
+# #15 DONE 6.9s
 
-portal_MTdiMDljYzg5YjQwNWIzZ
+portal_MTc1ZDE5MzVlYzRjODg2M
 # (0) nix build .#nix-serve-service.manifests
+# /Users/carl/source/github-at-home/
 # warning: Git tree '/Users/carl/source/github-at-home' is dirty
 # this derivation will be built:
-#   /nix/store/jkkccq9vdm91i0zybj76kpj3mwx9jfd4-k8s.yaml.drv
-# building '/nix/store/jkkccq9vdm91i0zybj76kpj3mwx9jfd4-k8s.yaml.drv'...
+#   /nix/store/qax3hrj9s3dgzxagwxpg1g0zbmyr7j9n-k8s.yaml.drv
+# building '/nix/store/qax3hrj9s3dgzxagwxpg1g0zbmyr7j9n-k8s.yaml.drv'...

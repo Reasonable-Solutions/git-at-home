@@ -4,3 +4,9 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+axum = "0.7.5"
+common = { path = "../common" }
+my-workspace-hack = { version = "0.1", path = "../my-workspace-hack" }
+tokio = { version = "1.0", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"

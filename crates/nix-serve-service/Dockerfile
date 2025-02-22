@@ -1,19 +1,13 @@
-FROM nixos/nix
+FROM rust:latest as builder
+WORKDIR /app
+COPY ./../../.. .
+RUN cargo build --release --package nix-serve-service --workspace
 
-RUN nix-channel --add https://nixos.org/channels/nixos-unstable nixos
-RUN nix-channel --update
+FROM debian:latest
+WORKDIR /app
+RUN mkdir -p /app/nar && \
+    chmod 777 /app/nar
 
-RUN nix-env -iA nixos.harmonia
+COPY --from=builder /app/target/release/nix-serve-service .
 
-VOLUME /var/cache
-EXPOSE 5000
-
-RUN echo 'store_dir = "/var/cache"' > /etc/harmonia.toml
-RUN echo 'host = "0.0.0.0"' >> /etc/harmonia.toml
-RUN echo 'port = 5000' >> /etc/harmonia.toml
-RUN echo 'substituters = [' >> /etc/harmonia.toml
-RUN echo '    "https://cache.nixos.org"' >> /etc/harmonia.toml
-RUN echo ']' >> /etc/harmonia.toml
-RUN mkdir -p /var/cache
-
-CMD ["harmonia", "--config", "/etc/harmonia.toml"]
+CMD ["./nix-serve-service"]

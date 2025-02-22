@@ -1678,6 +1678,14 @@ dependencies = [
 [[package]]
 name = "nix-serve-service"
 version = "0.1.0"
+dependencies = [
+ "axum 0.7.9",
+ "common",
+ "my-workspace-hack",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
 
 [[package]]
 name = "nu-ansi-term"

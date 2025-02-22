@@ -1,7 +1,7 @@
 apiVersion: build.example.com/v1alpha1
 kind: NixBuild
 metadata:
-  name: nais-cli-build-once-vii
+  name: nais-cli-build-once-i
 spec:
   git_repo: "https://github.com/nais/cli.git"
   git_ref: "main"          # optional, default is main

@@ -35,7 +35,8 @@ async fn reconcile(build: Arc<NixBuild>, ctx: Arc<ContextData>) -> Result<Action
     let builds_list = builds.list(&Default::default()).await?;
     let jobs_list = jobs.list(&Default::default()).await?;
 
-    tracing::info!( // How pods is this shitting out?
+    tracing::info!(
+        // How pods is this shitting out?
         "Reconciling, we currently have {} builds and {} jobs",
         builds_list.items.len(),
         jobs_list.items.len()
@@ -191,11 +192,13 @@ fn create_build_job(
             "-c".to_string(),
             format!(
                 r#"
-                git clone {} /workspace
-                cd /workspace
-                {}
-                nix --extra-experimental-features nix-command --extra-experimental-features flakes build .#{}
-                "#,
+    git clone {} /workspace
+    cd /workspace
+    {}
+    nix --extra-experimental-features nix-command --extra-experimental-features flakes \
+        --option require-sigs false \
+        build .#{} \
+    "#,
                 build.spec.git_repo,
                 build
                     .spec
