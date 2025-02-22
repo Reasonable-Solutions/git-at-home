@@ -28,7 +28,7 @@ let
         spec:
           containers:
           - name: nix-serve
-            image: nix-serve-service:I
+            image: nix-serve-service:RI
             ports:
             - containerPort: 3000
             volumeMounts:
@@ -49,6 +49,6 @@ let
       ports:
         - protocol: TCP
           port: 3000
-    targetPort: 3000
+          targetPort: 3000
   '';
 in { inherit manifests; }
