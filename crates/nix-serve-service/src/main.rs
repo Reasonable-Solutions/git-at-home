@@ -5,7 +5,7 @@ use axum::{
     body::Bytes,
 };
 use tokio::fs;
-use tracing::{info, error, Level};
+use tracing::{error, info, warn, Level};
 
 async fn get_cache_info() -> &'static str {
     info!("Serving nix-cache-info");
@@ -38,7 +38,7 @@ async fn get_nar(Path(hash): Path<String>) -> Result<Bytes, StatusCode> {
 
 async fn upload_narinfo(Path(hash): Path<String>, body: String) -> StatusCode {
     info!(hash = %hash, size = body.len(), "Uploading narinfo");
-    match fs::write(format!("nar/{}.narinfo", hash), body).await {
+    match fs::write(format!("nar/{}", hash), body).await {
         Ok(_) => {
             info!(hash = %hash, "Successfully wrote narinfo");
             StatusCode::OK
@@ -51,8 +51,9 @@ async fn upload_narinfo(Path(hash): Path<String>, body: String) -> StatusCode {
 }
 
 async fn upload_nar(Path(hash): Path<String>, body: Bytes) -> StatusCode {
-    info!(hash = %hash, size = body.len(), "Uploading NAR");
-    match fs::write(format!("nar/{}.nar", hash), body).await {
+    warn!(hash = %hash, size = body.len(), "Uploading NAR");
+
+    match fs::write(format!("nar/{}", hash), body).await {
         Ok(_) => {
             info!(hash = %hash, "Successfully wrote NAR");
             StatusCode::OK
