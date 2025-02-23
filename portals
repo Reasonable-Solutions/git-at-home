@@ -1,41 +1,41 @@
 -*- mode: portal -*-
 
-portal_YjFkYzg5NjY1YWViYmE2Y
-# (0) docker build -t nix-build-controller:III -f Dockerfile.build-controller .
-# #13 sha256:09530509ac751dba18b50be77c9ab666caddc8f6fb807b16c5ae7e7904c4f936
+portal_MDkyNjkxOGMwYWMyNmQ2Z
+# (0) docker build -t nix-build-controller:V -f Dockerfile.build-controller .
 # #13 exporting layers 0.0s done
-# #13 writing image sha256:6f7724ff998ceecab6860e9f1ea2c3e097c43ed85a6b01ee73404
-# #13 naming to docker.io/library/nix-build-controller:III done
+# #13 writing image sha256:919076137519e49a491389865a4c2742b2e04f5e35fc5364d8367
+# #13 writing image sha256:919076137519e49a491389865a4c2742b2e04f5e35fc5364d8367
+# #13 naming to docker.io/library/nix-build-controller:V done
 # #13 DONE 0.0s
 
-portal_YThhOWE2ZmQ5MDc5ZjhmM
+portal_MmY0MTQ2MDU4ZTU3M2E4Y
 # (0) nix build .#build-controller-manifests
 # these 2 derivations will be built:
-#   /nix/store/m3fsax46fzi01j9y7lz5wag9m4icpjbw-build-controller-0.1.0.drv
-#   /nix/store/8rj59b0b9wb7ds2lz55yi7b10kla9zzc-build-controller-manifests.drv
-# building '/nix/store/m3fsax46fzi01j9y7lz5wag9m4icpjbw-build-controller-0.1.0.d
-# building '/nix/store/8rj59b0b9wb7ds2lz55yi7b10kla9zzc-build-controller-manifes
+#   /nix/store/4cxmd2dvmxg59m5jmibf9x1bfym2pnas-build-controller-0.1.0.drv
+#   /nix/store/h160x6hb0y4c0d42kqc2xi8hwd43pa45-build-controller-manifests.drv
+# building '/nix/store/4cxmd2dvmxg59m5jmibf9x1bfym2pnas-build-controller-0.1.0.d
+# building '/nix/store/h160x6hb0y4c0d42kqc2xi8hwd43pa45-build-controller-manifes
 
 
-portal_MThkYWM1ZDI3N2NlMzcyM
-# (0) docker build -t nix-serve-service:I -f Dockerfile.nix-serve-service .
-# #14 sha256:bbc145738b67066f6ccef3ce7d7b10b8a9b0c37ad12038429d51471cd00c99d9
+portal_YmE2ZTE0MzdmMzMyNzA3Y
+# (0) docker build -t nix-serve-service:II -f Dockerfile.nix-serve-service .
+# #14 sha256:1dfde6cc5e0ca8df1cd94f523c0f4f7d9f48c1200d044f3706207857b14f9ec8
 # #14 exporting layers 0.0s done
-# #14 writing image sha256:0537c00f2fc7a24e4a3c7922b5b5d5c15e730ca0d9c06917887a5
-# #14 naming to docker.io/library/nix-serve-service:I done
+# #14 writing image sha256:fe3cae445f8761a969d986d2be62d310a173c45c149f144dbeae0
+# #14 naming to docker.io/library/nix-serve-service:II done
 # #14 DONE 0.0s
 
-portal_MmMyYWM3YTQ2ZmFhNGUzZ
+portal_YWIwZjUyNjhjNGYzNmM5N
 # (0) nix build .#nix-serve-service.manifests
 # warning: Git tree '/Users/carl/source/github-at-home' is dirty
 # this derivation will be built:
-#   /nix/store/h44dc9cafp5lm50wlws5a3vrgp8419nl-k8s.yaml.drv
-# building '/nix/store/h44dc9cafp5lm50wlws5a3vrgp8419nl-k8s.yaml.drv'...
+#   /nix/store/dch8a8j73b5br39jqwahlj3p7gckl8gl-k8s.yaml.drv
+# building '/nix/store/dch8a8j73b5br39jqwahlj3p7gckl8gl-k8s.yaml.drv'...
 
-portal_OWE5NmJiMGYzMDI4MDk4N
+portal_OWI3NDc0N2JjNDA5MTM0N
 # (0) docker build -t nix-builder:I -f Dockerfile.builder .
-# #21 sha256:50c0e29b4463fecec91bb649a8ec0dfd493c7ad45a9fa570b9d8aedb1d4a034d
-# #21 exporting layers done
-# #21 writing image sha256:c4635360bf84cef0fa466c0f078cc395a0884cee550d9739aede0
+# #21 exporting layers
+# #21 exporting layers 2.8s done
+# #21 writing image sha256:23f03cb789f1eb0046a87d9a3763cdf54228250b230972d5d31ee
 # #21 naming to docker.io/library/nix-builder:I done
-# #21 DONE 0.0s
+# #21 DONE 2.8s

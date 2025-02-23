@@ -28,7 +28,7 @@ let
         spec:
           containers:
           - name: nix-serve
-            image: nix-serve-service:I
+            image: nix-serve-service:II
             ports:
             - containerPort: 3000
             volumeMounts:

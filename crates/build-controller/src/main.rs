@@ -186,21 +186,21 @@ fn create_build_job(
 ) -> Result<Job, Error> {
     let container = Container {
         name: "builder".to_string(),
-        image: Some("nixos/nix:latest".to_string()),
+        image: Some("nix-builder:I".to_string()),
+        image_pull_policy: Some("Never".to_owned()),
         // TODO: this shouldn't be a string ffs.
         // TODO: THis needs to be a rootless container, in real life applications
+        // TODO: push-to-cache.sh should not be defined here either.
         command: Some(vec![
             "/bin/sh".to_string(),
             "-c".to_string(),
             format!(
                 r#"
-                echo '#!/usr/bin/env bash' >> push-to-cache.sh
-                echo '/root/.nix-profile/bin/nix --extra-experimental-features nix-command --extra-experimental-features flakes copy --to http://{} $OUT_PATHS' >> push-to-cache.sh
-
-                chmod +x push-to-cache.sh
+                echo '#!/usr/bin/env bash' >> /push-to-cache.sh
+                echo '/root/.nix-profile/bin/nix --extra-experimental-features nix-command --extra-experimental-features flakes copy --to http://{} $OUT_PATHS' >> /push-to-cache.sh
+                chmod +x /push-to-cache.sh
 
                 git clone {} /workspace
-                which nix
                 cd /workspace
                 {}
                 nix --extra-experimental-features nix-command --extra-experimental-features flakes \
@@ -208,7 +208,7 @@ fn create_build_job(
                     --option substitute true \
                     --option extra-substituters http://{} \
                     build .#{} \
-                    --post-build-hook ./push-to-cache.sh
+                    --post-build-hook /push-to-cache.sh
                     "#,
                 "nix-serve.default.svc.cluster.local:3000",
                 build.spec.git_repo,
