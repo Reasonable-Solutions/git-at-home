@@ -188,13 +188,14 @@ fn create_build_job(
         name: "builder".to_string(),
         image: Some("nixos/nix:latest".to_string()),
         // TODO: this shouldn't be a string ffs.
+        // TODO: THis needs to be a rootless container, in real life applications
         command: Some(vec![
             "/bin/sh".to_string(),
             "-c".to_string(),
             format!(
                 r#"
                 echo '#!/usr/bin/env bash' >> push-to-cache.sh
-                echo '/nix/var/nix/profiles/default/bin/nix --extra-experimental-features nix-command --extra-experimental-features flakes copy --to http://{} $OUT_PATHS' >> push-to-cache.sh
+                echo '/root/.nix-profile/bin/nix --extra-experimental-features nix-command --extra-experimental-features flakes copy --to http://{} $OUT_PATHS' >> push-to-cache.sh
 
                 chmod +x push-to-cache.sh
 
