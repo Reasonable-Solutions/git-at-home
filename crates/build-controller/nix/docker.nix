@@ -32,7 +32,7 @@ let
               serviceAccountName = pname;
               containers = [{
                 name = pname;
-                image = "${pname}:V";
+                image = "${pname}:I";
                 imagePullPolicy = "Never";
                 env = [{
                   name = "RUST_LOG";

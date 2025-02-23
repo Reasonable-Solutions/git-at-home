@@ -196,19 +196,19 @@ fn create_build_job(
             "-c".to_string(),
             format!(
                 r#"
-                echo '#!/usr/bin/env bash' >> /push-to-cache.sh
-                echo '/root/.nix-profile/bin/nix --extra-experimental-features nix-command --extra-experimental-features flakes copy --to http://{} $OUT_PATHS' >> /push-to-cache.sh
-                chmod +x /push-to-cache.sh
-
-                git clone {} /workspace
-                cd /workspace
+                echo '#!/usr/bin/env bash' >> /home/nixuser/push-to-cache.sh
+                echo '/home/nixuser/.nix-profile/bin/nix --extra-experimental-features nix-command --extra-experimental-features flakes copy --to http://{} $OUT_PATHS' >> /home/nixuser/push-to-cache.sh
+                chmod +x /home/nixuser/push-to-cache.sh
+                which nix
+                git clone {} workspace
+                cd workspace
                 {}
                 nix --extra-experimental-features nix-command --extra-experimental-features flakes \
                     --option require-sigs false \
                     --option substitute true \
                     --option extra-substituters http://{} \
                     build .#{} \
-                    --post-build-hook /push-to-cache.sh
+                    --post-build-hook /home/nixuser/push-to-cache.sh
                     "#,
                 "nix-serve.default.svc.cluster.local:3000",
                 build.spec.git_repo,

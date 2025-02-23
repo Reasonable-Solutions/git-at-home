@@ -22,22 +22,23 @@ to use tower(?) hyper(?). Whatever the bottom of the stack there is.
 
 async fn get_cache_info() -> &'static str {
     info!("Serving nix-cache-info");
-    "StoreDir: /nix/store\nWantMassQuery: 1\nPriority: 30"
+    "StoreDir: /nix/store\nWantMassQuery: 1\nPriority: 20"
 }
-async fn get_narinfo(Path(hash): Path<String>) -> StatusCode {
+
+async fn get_narinfo(Path(hash): Path<String>) -> Result<String, StatusCode> {
     info!(hash = %hash, "Fetching narinfo");
-    match fs::read_to_string(format!("nar/{}.narinfo", hash)).await {
-        Ok(_content) => StatusCode::OK,
+    match fs::read_to_string(format!("nar/{}", hash)).await {
+        Ok(content) => Ok(content),
         Err(_) => {
             info!(hash = %hash, "narinfo not found");
-            StatusCode::NOT_FOUND
+            Err(StatusCode::NOT_FOUND)
         }
     }
 }
 
 async fn get_nar(Path(hash): Path<String>) -> Result<Bytes, StatusCode> {
     info!(hash = %hash, "Fetching NAR");
-    match fs::read(format!("nar/{}.nar", hash)).await {
+    match fs::read(format!("nar/{}", hash)).await {
         Ok(bytes) => {
             info!(hash = %hash, size = bytes.len(), "Successfully read NAR");
             Ok(Bytes::from(bytes))

@@ -1,18 +1,16 @@
 * todo stuff
-Thins i would like to have on top of this:
-
-somehow Hakari is broken here. cant cargo hakari generate
-
-A repo controller that manages typical git metadata such as latest commit, HEAD, branches, Pull Requests, Merges etc (or several controllers).  (I'll build this eventually)
-
-A service for git-ssh with a little managment api on top. (I'll build this next)
-
-ReadWriteMany enabled PVCs so every single builder can share exactly the same nix store. (We get this on gke auto-pilot :upside_melt: )
-
-a git-person controller that can sync github pubkeys into the repos based on something or other
-
-A handsucked cache implementation
-
-Very large nodes with a I-am-a-build-machine taint or a dedicated node pool
-
-A service for nix-serve with a managemenet api on top. No biggie to build
+** TODO [#B] Fix Hakari cargo generation
+** TODO Build repo controller for git metadata
+  - Latest commit tracking
+  - HEAD state
+  - Branch management
+  - PR tracking
+  - Merge handling
+** TODO Implement git-ssh service with management API
+** TODO Set up ReadWriteMany PVCs for shared nix store
+** TODO Create git-person controller for GitHub pubkey sync
+** TODO Implement handsucked cache
+** TODO Configure large nodes with build-machine taint/dedicated pool
+** TODO Build nix-serve service with management API
+** TODO Convert all Dockerfiles to nix
+  - Fix aarch64-linux runner
