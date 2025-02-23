@@ -1680,7 +1680,9 @@ name = "nix-serve-service"
 version = "0.1.0"
 dependencies = [
  "axum 0.7.9",
+ "bytes",
  "common",
+ "futures",
  "my-workspace-hack",
  "tokio",
  "tower-http",
