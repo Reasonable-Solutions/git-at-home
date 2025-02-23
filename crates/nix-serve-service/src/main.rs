@@ -7,6 +7,15 @@ use axum::{
 use tokio::fs;
 use tracing::{error, info, warn, Level};
 
+/* TODO:
+Make it streaming and make transfer-encoding: chunked be a thing
+Deal with concurrent creation of files by writing to temp and then moving the full file
+It would be cool if narinfo could be tcp-nodelay and small buffer and
+nars could be large buffers and sendfile. Idk if i can do that in axum or if i need
+to use tower(?) hyper(?). Whatever the bottom of the stack there is.
+
+*/
+
 async fn get_cache_info() -> &'static str {
     info!("Serving nix-cache-info");
     "StoreDir: /nix/store\nWantMassQuery: 1\nPriority: 30"
