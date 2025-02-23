@@ -200,6 +200,7 @@ fn create_build_job(
                 chmod +x push-to-cache.sh
 
                 git clone {} /workspace
+                which nix
                 cd /workspace
                 {}
                 nix --extra-experimental-features nix-command --extra-experimental-features flakes \

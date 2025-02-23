@@ -1,19 +1,20 @@
 -*- mode: portal -*-
 
-portal_ZjY1NGUzOGJlY2Q0MTFmM
-# (0) docker build -t nix-build-controller:I -f Dockerfile.build-controller .
-# #13 sha256:597c8358287f72f89a814c365747a1780f64a7927435a96c80a8f5d26c9e24fd
-# #13 exporting layers done
-# #13 writing image sha256:f445f9b839bc408144c0c8d06d254714e1101bb5c10bf506ae383
-# #13 naming to docker.io/library/nix-build-controller:I done
+portal_YjFkYzg5NjY1YWViYmE2Y
+# (0) docker build -t nix-build-controller:III -f Dockerfile.build-controller .
+# #13 sha256:09530509ac751dba18b50be77c9ab666caddc8f6fb807b16c5ae7e7904c4f936
+# #13 exporting layers 0.0s done
+# #13 writing image sha256:6f7724ff998ceecab6860e9f1ea2c3e097c43ed85a6b01ee73404
+# #13 naming to docker.io/library/nix-build-controller:III done
 # #13 DONE 0.0s
 
-portal_YWIwMDllZGQzYzA0NWYwZ
+portal_YThhOWE2ZmQ5MDc5ZjhmM
 # (0) nix build .#build-controller-manifests
-# warning: Git tree '/Users/carl/source/github-at-home' is dirty
-# this derivation will be built:
-#   /nix/store/nxjg3p6rcjylvdh8ky7ag5bpgixjxn7c-build-controller-manifests.drv
-# building '/nix/store/nxjg3p6rcjylvdh8ky7ag5bpgixjxn7c-build-controller-manifes
+# these 2 derivations will be built:
+#   /nix/store/m3fsax46fzi01j9y7lz5wag9m4icpjbw-build-controller-0.1.0.drv
+#   /nix/store/8rj59b0b9wb7ds2lz55yi7b10kla9zzc-build-controller-manifests.drv
+# building '/nix/store/m3fsax46fzi01j9y7lz5wag9m4icpjbw-build-controller-0.1.0.d
+# building '/nix/store/8rj59b0b9wb7ds2lz55yi7b10kla9zzc-build-controller-manifes
 
 
 portal_MThkYWM1ZDI3N2NlMzcyM
@@ -30,3 +31,11 @@ portal_MmMyYWM3YTQ2ZmFhNGUzZ
 # this derivation will be built:
 #   /nix/store/h44dc9cafp5lm50wlws5a3vrgp8419nl-k8s.yaml.drv
 # building '/nix/store/h44dc9cafp5lm50wlws5a3vrgp8419nl-k8s.yaml.drv'...
+
+portal_OWE5NmJiMGYzMDI4MDk4N
+# (0) docker build -t nix-builder:I -f Dockerfile.builder .
+# #21 sha256:50c0e29b4463fecec91bb649a8ec0dfd493c7ad45a9fa570b9d8aedb1d4a034d
+# #21 exporting layers done
+# #21 writing image sha256:c4635360bf84cef0fa466c0f078cc395a0884cee550d9739aede0
+# #21 naming to docker.io/library/nix-builder:I done
+# #21 DONE 0.0s
