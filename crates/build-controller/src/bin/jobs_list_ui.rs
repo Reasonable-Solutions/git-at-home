@@ -25,6 +25,46 @@ async fn index_page() -> axum::response::Html<String> {
         <head>
             <title>Nix Builds</title>
             <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+
+
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen-Sans, Ubuntu, sans-serif;
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 20px;
+                background: #f5f5f5;
+              }
+
+              table {
+                width: 100%;
+                border-collapse: collapse;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+              }
+
+              th, td {
+                padding: 12px;
+                text-align: left;
+                border-bottom: 1px solid #eee;
+              }
+
+              th {
+                background: #f8f9fa;
+                font-weight: 600;
+              }
+
+              a {
+                color: #0066cc;
+                text-decoration: none;
+              }
+
+              h1 {
+                color: #333;
+                margin-bottom: 24px;
+              }
+            </style>
         </head>
         <body>
             <h1>Nix Builds</h1>
@@ -43,7 +83,7 @@ async fn list_jobs() -> axum::response::Html<String> {
 
     let builds_html = builds.items.iter()
         .map(|build| format!(
-            "<tr><td><a href=/jobs/{}>{}</a></td><td>{}</td><td>{}</td></tr>",
+            "<tr><td><a hx-boost=\"true\" href=/jobs/{}>{}</a></td><td>{}</td><td>{}</td></tr>",
             build.metadata.name.clone().unwrap_or_default(),
             build.metadata.name.clone().unwrap_or_default(),
             build.status.as_ref().map_or("Unknown".to_string(), |s| s.phase.clone()),
