@@ -191,6 +191,8 @@ fn create_build_job(
         // TODO: this shouldn't be a string ffs.
         // TODO: THis needs to be a rootless container, in real life applications
         // TODO: push-to-cache.sh should not be defined here either.
+        // TODO: post-build-hooks are blocking, there should be a "put-out-path-on-queue" machine called in the hook
+        //       and a separate worker for actually pushing build results.
         command: Some(vec![
             "/bin/sh".to_string(),
             "-c".to_string(),
