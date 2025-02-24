@@ -9,14 +9,13 @@ portal_NmYyOTIwNmQxYzc3ZDA0Y
 # #14 naming to docker.io/library/nix-build-controller:I done
 # #14 DONE 0.1s
 
-portal_YjM4YTA5YWI2MDI1N2ZhZ
+portal_MmY0ZWQyOWE0N2VmYmVhY
 # (0) nix build .#build-controller-manifests
 # /Users/carl/source/github-at-home/
-# these 2 derivations will be built:
-#   /nix/store/0f6ichwy6aq89dps9zi186va17kr1j3l-build-controller-0.1.0.drv
-#   /nix/store/g1j2l5q3nh0h57lnhm9sjz2y6px77xxk-build-controller-manifests.drv
-# building '/nix/store/0f6ichwy6aq89dps9zi186va17kr1j3l-build-controller-0.1.0.d
-# building '/nix/store/g1j2l5q3nh0h57lnhm9sjz2y6px77xxk-build-controller-manifes
+# warning: Git tree '/Users/carl/source/github-at-home' is dirty
+# this derivation will be built:
+#   /nix/store/nlkxdfmddz02mmyyy8vbfa0k5f9b87zm-build-controller-manifests.drv
+# building '/nix/store/nlkxdfmddz02mmyyy8vbfa0k5f9b87zm-build-controller-manifes
 
 
 portal_MGUwOWQyYTAxMjI1NjllZ
@@ -28,8 +27,8 @@ portal_MGUwOWQyYTAxMjI1NjllZ
 # #14 naming to docker.io/library/nix-serve-service:II done
 # #14 DONE 0.0s
 
-portal_ZmIwMjBiZTA1Y2FjNzgxO
-# (0) nix build .#nix-serve-service.manifests
+portal_Y2UzNTliYWUyMGYzNjYzO
+# (0) nix build .#nix-serve.manifests
 # /Users/carl/source/github-at-home/
 # warning: Git tree '/Users/carl/source/github-at-home' is dirty
 
