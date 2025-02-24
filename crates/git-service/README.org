@@ -1,3 +1,0 @@
-* GIT
-this crate provides a grpc managment server for git. It accepts grpc commands and shells out to git to
-do operations like adding authorized keys and stuff sent to it by the repo-controller.  If you use the dumb client or touch .git manually, you could end up in a sad state.

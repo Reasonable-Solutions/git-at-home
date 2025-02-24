@@ -1,3 +1,0 @@
-* repo-controller
-this is a controller for the repo api group. It deals with user keys, and git metadata, eg. delete and create branches
-and pull requests etc based on k8s resources

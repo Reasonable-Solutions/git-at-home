@@ -1,0 +1,5 @@
+FROM python:3
+RUN pip install mercurial
+WORKDIR /repo
+EXPOSE 8000
+CMD ["hg", "serve", "--address", "0.0.0.0", "--port", "8000"]

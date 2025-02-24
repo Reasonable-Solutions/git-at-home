@@ -2,6 +2,7 @@
 
 portal_NmYyOTIwNmQxYzc3ZDA0Y
 # (0) docker build -t nix-build-controller:I -f Dockerfile.build-controller .
+# /Users/carl/source/github-at-home/
 # #14 exporting layers 0.0s done
 # #14 writing image sha256:fd73036d17d4cbd4f40e7f5651dfd1f5bd8314cc5f156158c2e19
 # #14 naming to docker.io/library/nix-build-controller:I
@@ -10,6 +11,7 @@ portal_NmYyOTIwNmQxYzc3ZDA0Y
 
 portal_YjM4YTA5YWI2MDI1N2ZhZ
 # (0) nix build .#build-controller-manifests
+# /Users/carl/source/github-at-home/
 # these 2 derivations will be built:
 #   /nix/store/0f6ichwy6aq89dps9zi186va17kr1j3l-build-controller-0.1.0.drv
 #   /nix/store/g1j2l5q3nh0h57lnhm9sjz2y6px77xxk-build-controller-manifests.drv
@@ -19,6 +21,7 @@ portal_YjM4YTA5YWI2MDI1N2ZhZ
 
 portal_MGUwOWQyYTAxMjI1NjllZ
 # (0) docker build -t nix-serve-service:II -f Dockerfile.nix-serve-service .
+# /Users/carl/source/github-at-home/
 # #14 sha256:d29157eae1964607465f4de004040614e6fcad45a53960b0a6b2324ef1d94222
 # #14 exporting layers 0.0s done
 # #14 writing image sha256:67f12de67ce3a0dbc0bc23e349c15c0f101fc3a1d0643a84916a1
@@ -27,10 +30,12 @@ portal_MGUwOWQyYTAxMjI1NjllZ
 
 portal_ZmIwMjBiZTA1Y2FjNzgxO
 # (0) nix build .#nix-serve-service.manifests
+# /Users/carl/source/github-at-home/
 # warning: Git tree '/Users/carl/source/github-at-home' is dirty
 
 portal_OWY1YmRkOTQ1NTY3YmE3Y
 # (0) docker build -t nix-builder:I -f Dockerfile.builder .
+# /Users/carl/source/github-at-home/
 # #23 exporting layers 7.3s done
 # #23 writing image sha256:ce6142aa8a9c824e1a0afdfd78ba38eb718296ddf8571643f5bf0
 # #23 writing image sha256:ce6142aa8a9c824e1a0afdfd78ba38eb718296ddf8571643f5bf0

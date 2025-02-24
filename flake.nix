@@ -92,27 +92,22 @@
           cargoExtraArgs = "-p build-controller";
           src = fileSetForCrate ./crates/build-controller;
         });
-        repo-controller = craneLib.buildPackage (individualCrateArgs // {
-          pname = "repo-controller";
-          cargoExtraArgs = "-p repo-controller";
-          src = fileSetForCrate ./crates/repo-controller;
+        nix-serve-service = craneLib.buildPackage (individualCrateArgs // {
+          pname = "nix-serve-service";
+          cargoExtraArgs = "-p nix-serve-service";
+          src = fileSetForCrate ./crates/nix-serve-service;
         });
-        git-service = craneLib.buildPackage (individualCrateArgs // {
-          pname = "git-service";
-          cargoExtraArgs = "-p git-service";
-          src = fileSetForCrate ./crates/git-service;
-        });
-        controller = pkgs.callPackage ./crates/build-controller/nix/docker.nix {
+
+        controller = pkgs.callPackage ./crates/build-controller/nix/k8s.nix {
           inherit build-controller;
         };
 
-        nix-serve-service =
-          pkgs.callPackage ./crates/nix-serve-service/nix/docker.nix { };
+        nix-serve = pkgs.callPackage ./crates/nix-serve-service/nix/k8s.nix { };
 
       in {
         checks = {
           # Build the crates as part of `nix flake check` for convenience
-          inherit build-controller repo-controller git-service;
+          inherit build-controller nix-serve;
 
           # Run clippy (and deny all warnings) on the workspace source,
           # again, reusing the dependency artifacts from above.
@@ -171,8 +166,7 @@
         };
 
         packages = {
-          inherit build-controller repo-controller git-service
-            nix-serve-service;
+          inherit build-controller nix-serve-service nix-serve;
           build-controller-image = controller.image;
           build-controller-manifests = controller.manifests;
         } // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
@@ -182,8 +176,7 @@
 
         apps = {
           inherit build-controller;
-          repo-controller = flake-utils.lib.mkApp { drv = repo-controller; };
-          git-service = flake-utils.lib.mkApp { drv = git-service; };
+          nix-serve = flake-utils.lib.mkApp { drv = nix-serve; };
         };
         devShells.default = craneLib.devShell {
           # Inherit inputs from checks.

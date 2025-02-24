@@ -18,6 +18,8 @@ It would be cool if narinfo could be tcp-nodelay and small buffer and
 nars could be large buffers and sendfile. Idk if i can do that in axum or if i need
 to use tower(?) hyper(?). Whatever the bottom of the stack there is.
 
+The narinfo should be an in-memory cache and not hammer the disk for every single operation.
+The in-memory cache should have an inotify process that keeps it updated (can i do that in k8s on a pvc?)
 */
 
 async fn get_cache_info() -> &'static str {
