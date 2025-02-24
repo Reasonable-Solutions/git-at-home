@@ -8,6 +8,14 @@ publish = false
 name = "make-crd"
 path = "src/bin/make-crd.rs"
 
+[[bin]]
+name = "jobs-list-ui"
+path = "src/bin/jobs_list_ui.rs"
+
+[[bin]]
+name = "job-ui"
+path = "src/bin/job_ui.rs"
+
 
 [dependencies]
 axum = "0.7.5"

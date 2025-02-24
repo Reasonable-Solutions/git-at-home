@@ -1,5 +1,5 @@
-* todo stuff
-** TODO [#B] Fix Hakari cargo generation
+* Todo
+** DONE [#B] Fix Hakari cargo generation
 ** TODO Build repo controller for git metadata
   - Latest commit tracking
   - HEAD state
@@ -7,10 +7,23 @@
   - PR tracking
   - Merge handling
 ** TODO Implement git-ssh service with management API
-** TODO Set up ReadWriteMany PVCs for shared nix store
+** Set up ReadWriteMany PVCs for shared nix store
 ** TODO Create git-person controller for GitHub pubkey sync
-** TODO Implement handsucked cache
+** DONE Implement handsucked cache
 ** TODO Configure large nodes with build-machine taint/dedicated pool
 ** TODO Build nix-serve service with management API
 ** TODO Convert all Dockerfiles to nix
   - Fix aarch64-linux runner
+** Builder
+*** Use something other than a string for the job command.
+*** Move push-to-cache outside
+*** Parametrize over image (con: why can you choose image??)
+*** Post build hooks are blocking, make them async
+*** A SET OF COOL HTMX SERVER THAT DOES KUBECLIENT STUFF FOR RESOURCES RELATED TO BUILDS, TIED TOGETHER OVER THE GATEWAYAPI
+** nix-serve
+*** Some sorta gc other than dropping the pvc?
+*** in-memory cache of narinfo, inotify driven(?)
+*** sendfile, large buffers (8mb for in cluster? nodelay) etc.
+** git-service
+*** Just make the dockerfile and deployment and push it.
+*** should there be a mirror job? could be!
