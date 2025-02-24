@@ -68,7 +68,7 @@ async fn index_page() -> axum::response::Html<String> {
         </head>
         <body>
             <h1>Nix Builds</h1>
-            <div hx-get="/jobs-list" hx-trigger="every 5s">
+            <div hx-get="/jobs-list" hx-trigger="load, every 5s">
             </div>
         </body>
         </html>"#.to_string()
