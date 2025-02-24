@@ -104,6 +104,16 @@
 
         nix-serve = pkgs.callPackage ./crates/nix-serve-service/nix/k8s.nix { };
 
+        k8s-ui = import ./crates/build-controller/nix/ui.nix { inherit pkgs; };
+        ui-yamls = pkgs.runCommand "k8s-yamls" { } (let
+          makeYamlFile = index: resource: ''
+            mkdir -p $out
+            echo '${pkgs.lib.generators.toYAML { } resource}' > $out/resource-${
+              toString index
+            }.yaml
+          '';
+        in lib.concatStrings (lib.imap0 makeYamlFile k8s-ui.resources));
+
       in {
         checks = {
           # Build the crates as part of `nix flake check` for convenience
@@ -166,7 +176,7 @@
         };
 
         packages = {
-          inherit build-controller nix-serve-service nix-serve;
+          inherit build-controller nix-serve-service nix-serve ui-yamls;
           build-controller-image = controller.image;
           build-controller-manifests = controller.manifests;
         } // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
