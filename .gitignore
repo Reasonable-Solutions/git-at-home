@@ -1,2 +1,7 @@
 /target/
 /result
+/.direnv/
+result.*
+.*result.*
+/crates/my-workspace-hack/result
+/nar/
