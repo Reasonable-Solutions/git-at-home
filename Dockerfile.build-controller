@@ -5,6 +5,7 @@ RUN cargo build --release --package build-controller --workspace
 
 FROM debian:latest
 WORKDIR /app
+USER 1069
 COPY --from=builder /app/target/release/build-controller .
 
 CMD ["./build-controller"]

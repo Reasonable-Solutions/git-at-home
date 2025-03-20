@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nix-build-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nix-build-controller
+  template:
+    metadata:
+      labels:
+        app: nix-build-controller
+    spec:
+      containers:
+        - env:
+            - name: RUST_LOG
+              value: info
+          image: nix-build-controller:I
+          imagePullPolicy: Never
+          name: nix-build-controller
+      serviceAccountName: nix-build-controller

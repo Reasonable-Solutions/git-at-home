@@ -4,10 +4,10 @@ COPY . .
 RUN cargo build --release --package nix-serve-service --workspace
 
 FROM debian:latest
+USER 1069
 WORKDIR /app
 RUN mkdir -p /app/nar && \
     chmod 777 /app/nar
-
 COPY --from=builder /app/target/release/nix-serve-service .
 
 CMD ["./nix-serve-service"]

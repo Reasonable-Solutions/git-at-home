@@ -101,4 +101,5 @@ let
     }' > $out/serviceaccount.yaml
   '';
 
+  foo = pkgs.writeshellScriptBin "copy files" 
 in { inherit image manifests; }

@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aivenator.fullname" . }}
+  labels:
+    {{- include "aivenator.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "aivenator.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "aivenator.selectorLabels" . | nindent 8 }}
+      annotations:
+        kubectl.kubernetes.io/default-container: {{ .Chart.Name }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: {{ include "aivenator.serviceAccountName" . }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsGroup: 1069
+            runAsNonRoot: true
+            runAsUser: 1069
+            allowPrivilegeEscalation: false
+            seccompProfile:
+              type: RuntimeDefault
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+          - name: AIVENATOR_LOG_FORMAT
+            value: json
+          - name: AIVENATOR_METRICS_ADDRESS
+            value: 0.0.0.0:8080
+          - name: AIVENATOR_PROJECTS
+            value: "{{ .Values.aiven.projects }}"
+          - name: AIVENATOR_MAIN_PROJECT
+            value: "{{ .Values.aiven.mainProject }}"
+          - name: NAIS_CLUSTER_NAME
+            value: "{{ .Values.clusterName }}"
+          {{- range $key, $value := .Values.extraEnv }}
+          - name: {{ $key }}
+            value: {{ $value | quote }}
+          {{- end }}
+          envFrom:
+            - secretRef:
+                name: {{ include "aivenator.fullname" . }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmpdir
+{{- if .Values.caBundle }}
+            - mountPath: /etc/ssl/certs/ca-certificates.crt
+              name: ca-bundle-pem
+              readOnly: true
+              subPath: ca-bundle.pem
+{{- end}}
+      volumes:
+        - name: tmpdir
+          emptyDir: {}
+{{- if .Values.caBundle }}
+        - configMap:
+            defaultMode: 420
+            name: ca-bundle-pem
+          name: ca-bundle-pem
+{{- end}}

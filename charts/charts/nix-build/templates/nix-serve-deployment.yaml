@@ -1,0 +1,27 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nix-serve
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nix-serve
+  template:
+    metadata:
+      labels:
+        app: nix-serve
+    spec:
+      containers:
+      - name: nix-serve
+        image: nix-serve-service:II
+        ports:
+        - containerPort: 3000
+        volumeMounts:
+        - name: nix-serve-data
+          mountPath: /app/nar
+      volumes:
+      - name: nix-serve-data
+        persistentVolumeClaim:
+          claimName: nix-serve-data-pvc

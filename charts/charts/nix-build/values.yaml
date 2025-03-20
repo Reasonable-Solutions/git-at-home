@@ -1,0 +1,22 @@
+# Default values for aivenator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Github workflow will set .image.tag to the built version before packaging
+image:
+  repository: europe-north1-docker.pkg.dev/nais-io/nais/images/nix-build-controller
+  pullPolicy: Always
+  tag: latest
+
+resources:
+  limits:
+    memory: 4Gi
+  requests:
+    cpu: 1
+    memory: 1Gi
+
+clusterName: dev-nais-dev
+tenant: dev.nais.io # Name of the tenant
+
+nixbuild:
+  nixserveUrl: # Url for nix serve,

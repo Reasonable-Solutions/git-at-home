@@ -187,6 +187,7 @@ fn create_build_job(
     let container = Container {
         name: "builder".to_string(),
         image: Some("nix-builder:I".to_string()),
+        // PROD: TODO:
         image_pull_policy: Some("Never".to_owned()),
         // TODO: this shouldn't be a string ffs.
         // TODO: THis needs to be a rootless container, in real life applications

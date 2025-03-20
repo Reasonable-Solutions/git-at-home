@@ -10,10 +10,21 @@ use futures::StreamExt;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
 use tracing::{error, info, warn, Level};
+use uuid::{self, Uuid};
+/* Productionize
+
+build helmcharts for nav-dev, Feature.yaml.
+bootstrap w. dockerfiles and get them into gar.
+Fasit-deploy github action, approve repo in terraform gh-nix-build
+one feature, one chart.
+Do not hardcode nix-serve url
+
+*/
 
 /* TODO:
 Make it streaming and make transfer-encoding: chunked be a thing [✓]
 Deal with concurrent creation of files by writing to temp and then moving the full file [✓]
+
 It would be cool if narinfo could be tcp-nodelay and small buffer and
 nars could be large buffers and sendfile. Idk if i can do that in axum or if i need
 to use tower(?) hyper(?). Whatever the bottom of the stack there is.
@@ -68,12 +79,13 @@ async fn upload_narinfo(Path(hash): Path<String>, body: String) -> StatusCode {
         }
     }
 }
+
 async fn upload_nar(
     Path(hash): Path<String>,
     body: axum::body::Body,
 ) -> Result<StatusCode, StatusCode> {
     warn!(hash = %hash, "Starting NAR upload");
-    let temp_path = format!("nar/{}.temp", hash); // TODO: slap a uuid on this guy?
+    let temp_path = format!("nar/{}.{}.temp", hash, Uuid::new_v4()); // TODO: slap a uuid on this guy?
     let final_path = format!("nar/{}", hash);
 
     // We create a temporary file and if everything goes well we yeet that into the
