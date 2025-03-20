@@ -1,15 +1,16 @@
 use axum::{
-    routing::{get, put},
-    Router, extract::Path,
-    http::StatusCode,
     body::Bytes,
+    extract::Path,
+    http::StatusCode,
+    routing::{get, put},
+    Router,
 };
 
 use axum::body::Body;
-use tokio::fs;
-use tracing::{error, info, warn, Level};
-use tokio::io::AsyncWriteExt;
 use futures::StreamExt;
+use tokio::fs;
+use tokio::io::AsyncWriteExt;
+use tracing::{error, info, warn, Level};
 
 /* TODO:
 Make it streaming and make transfer-encoding: chunked be a thing [✓]
@@ -22,11 +23,14 @@ The narinfo should be an in-memory cache and not hammer the disk for every singl
 The in-memory cache should have an inotify process that keeps it updated (can i do that in k8s on a pvc?)
 */
 
+// TODO: What is a sensible priority value? why does the cache hav it?
 async fn get_cache_info() -> &'static str {
     info!("Serving nix-cache-info");
     "StoreDir: /nix/store\nWantMassQuery: 1\nPriority: 20"
 }
 
+// These could just be generated on the fly. A narinfo is just a few lines describing a
+// narfile
 async fn get_narinfo(Path(hash): Path<String>) -> Result<String, StatusCode> {
     info!(hash = %hash, "Fetching narinfo");
     match fs::read_to_string(format!("nar/{}", hash)).await {
@@ -69,11 +73,13 @@ async fn upload_nar(
     Path(hash): Path<String>,
     body: axum::body::Body,
 ) -> Result<StatusCode, StatusCode> {
-
     warn!(hash = %hash, "Starting NAR upload");
     let temp_path = format!("nar/{}.temp", hash); // slap a uuid on this guy
     let final_path = format!("nar/{}", hash);
 
+    // We create a temporary file and if everything goes well we yeet that into the
+    // cache.
+    // TODO: There is no cleanup :upside-down:
     let mut file = match tokio::fs::File::create(&temp_path).await {
         Ok(file) => file,
         Err(e) => {
@@ -107,12 +113,9 @@ async fn upload_nar(
     Ok(StatusCode::OK)
 }
 
-
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt()
-        .with_max_level(Level::INFO)
-        .init();
+    tracing_subscriber::fmt().with_max_level(Level::INFO).init();
 
     info!("Starting Nix cache server");
 
