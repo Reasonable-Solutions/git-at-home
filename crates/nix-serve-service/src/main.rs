@@ -6,7 +6,6 @@ use axum::{
     Router,
 };
 
-use axum::body::Body;
 use futures::StreamExt;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
@@ -74,7 +73,7 @@ async fn upload_nar(
     body: axum::body::Body,
 ) -> Result<StatusCode, StatusCode> {
     warn!(hash = %hash, "Starting NAR upload");
-    let temp_path = format!("nar/{}.temp", hash); // slap a uuid on this guy
+    let temp_path = format!("nar/{}.temp", hash); // TODO: slap a uuid on this guy?
     let final_path = format!("nar/{}", hash);
 
     // We create a temporary file and if everything goes well we yeet that into the
