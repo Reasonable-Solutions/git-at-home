@@ -16,13 +16,28 @@ let
   # TODO: make-crd, the bin should be parametrized over pname too
   manifests = pkgs.runCommand "build-controller-manifests" { } ''
     mkdir -p $out
-    ${build-controller}/bin/make-crd > $out/crd.yaml
+    ${build-controller}/bin/make-crd > $out/templates/crd.yaml
 
+    echo '${
+        builtins.toJson {
+          image:
+            repository: europe-north1-docker.pkg.dev/nais-io/nais/images/nix-build-controller
+            pullPolicy: Always
+            tag: latest
+
+         clusterName: dev-nais-dev
+         tenant: dev.nais.io 
+
+         nixbuild:
+           nixserveUrl: # Url for nix serve,
+
+      }
+    }' > $out/templates/values.yaml  
     echo '${
       builtins.toJSON {
         apiVersion = "apps/v1";
         kind = "Deployment";
-        metadata = { name = pname; };
+        metadata = { name = pname; namespace = "nais-systems" };
         spec = {
           replicas = 1;
           selector.matchLabels = { app = pname; };
@@ -43,15 +58,15 @@ let
           };
         };
       }
-    }' > $out/deployment.yaml
+    }' > $out/templates/deployment.yaml
 
     echo '${
       builtins.toJSON {
         apiVersion = "rbac.authorization.k8s.io/v1";
-        kind = "ClusterRole";
+        kind = "Role";
         metadata = {
           name = pname;
-          namespace = "default";
+          namespace = "nais-system";
         };
         rules = [
           {
@@ -60,26 +75,23 @@ let
             verbs = [ "create" "delete" "get" "list" "watch" ];
           }
           {
-            apiGroups = [ "build.example.com" ];
-            # Subresources appears to need to be explicitly specified v0v
+            apiGroups = [ "build.nais.io" ];
             resources = [ "nixbuilds" "nixbuilds/status" ];
-
-            # TODO:  Create only exists here for creating nixbuilds/status, not nixbuilds.
             verbs = [ "get" "list" "watch" "update" "create" "patch" ];
           }
         ];
       }
-    }' > $out/role.yaml
+    }' > $out/templates/role.yaml
 
     echo '${
       builtins.toJSON {
         apiVersion = "rbac.authorization.k8s.io/v1";
-        kind = "ClusterRoleBinding";
-        metadata = { name = pname; };
+        kind = "RoleBinding";
+        metadata = { name = pname; namespace = "nais-system" };
         subjects = [{
           kind = "ServiceAccount";
           name = pname;
-          namespace = "default";
+          namespace = "nais-system";
         }];
         roleRef = {
           kind = "ClusterRole";
@@ -87,7 +99,7 @@ let
           apiGroup = "rbac.authorization.k8s.io";
         };
       }
-    }' > $out/rolebinding.yaml
+    }' > $out/templates/rolebinding.yaml
 
     echo '${
       builtins.toJSON {
@@ -95,11 +107,10 @@ let
         kind = "ServiceAccount";
         metadata = {
           name = pname;
-          namespace = "default";
+          namespace = "nais-systems";
         };
       }
-    }' > $out/serviceaccount.yaml
+    }' > $out/templates/serviceaccount.yaml
   '';
 
-  foo = pkgs.writeshellScriptBin "copy files" 
 in { inherit image manifests; }

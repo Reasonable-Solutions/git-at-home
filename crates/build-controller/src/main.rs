@@ -1,11 +1,13 @@
 use futures::StreamExt;
 use k8s_openapi::api::batch::v1::{Job, JobSpec};
-use k8s_openapi::api::core::v1::{Container, PodSpec, PodTemplateSpec};
+use k8s_openapi::api::core::v1::{Container, PodSpec, PodTemplateSpec, ResourceRequirements};
+use k8s_openapi::apimachinery::pkg::api::resource::Quantity;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::{ObjectMeta, OwnerReference};
 use kube::{
     runtime::controller::{Action, Controller},
     Api, Client, Resource, ResourceExt,
 };
+use std::collections::BTreeMap;
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::time::Duration;
@@ -184,6 +186,14 @@ fn create_build_job(
     name: String,
     owner_reference: OwnerReference,
 ) -> Result<Job, Error> {
+    let resources = ResourceRequirements {
+        requests: Some(BTreeMap::from([
+            ("cpu".to_string(), Quantity("1".to_string())),
+            ("memory".to_string(), Quantity("4".to_string())),
+        ])),
+        ..ResourceRequirements::default()
+    };
+
     let container = Container {
         name: "builder".to_string(),
         image: Some("nix-builder:I".to_string()),
@@ -192,8 +202,8 @@ fn create_build_job(
         // TODO: this shouldn't be a string ffs.
         // TODO: THis needs to be a rootless container, in real life applications
         // TODO: push-to-cache.sh should not be defined here either.
-        // TODO: post-build-hooks are blocking, there should be a "put-out-path-on-queue" machine called in the hook
-        //       and a separate worker for actually pushing build results.
+        // TODO: post-build-hooks are blocking, there should be a "put-out-path-on-queue" process called in the hook
+        //       and a separate worker for actually pushing build results. The docs for --post-build-hooks says that what we're doing here is a poor idea
         command: Some(vec![
             "/bin/sh".to_string(),
             "-c".to_string(),
@@ -213,7 +223,7 @@ fn create_build_job(
                     build .#{} \
                     --post-build-hook /home/nixuser/push-to-cache.sh
                     "#,
-                "nix-serve.default.svc.cluster.local:3000",
+                "nix-serve.default.svc.cluster.local:3000", // TODO: configuration
                 build.spec.git_repo,
                 build
                     .spec
@@ -221,7 +231,7 @@ fn create_build_job(
                     .as_ref()
                     .map(|r| format!("git checkout {}", r))
                     .unwrap_or_default(),
-                "nix-serve.default.svc.cluster.local:3000",
+                "nix-serve.default.svc.cluster.local:3000", // TODO: configurable
                 build
                     .spec
                     .nix_attr
@@ -229,6 +239,7 @@ fn create_build_job(
                     .unwrap_or(&"docker".to_string())
             ),
         ]),
+        resources: Some(resources),
         ..Container::default()
     };
 
@@ -242,6 +253,7 @@ fn create_build_job(
             template: PodTemplateSpec {
                 spec: Some(PodSpec {
                     containers: vec![container],
+
                     restart_policy: Some("Never".to_string()),
                     ..PodSpec::default()
                 }),
