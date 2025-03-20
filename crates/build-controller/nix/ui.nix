@@ -10,7 +10,7 @@ let
         metadata.labels.app = "job-list-ui";
         spec.containers = [{
           name = "job-list-ui";
-          image = "jobs-list-ui:I";
+          image = "job-list-ui:I";
           ports = [{ containerPort = 3000; }];
         }];
       };
@@ -69,7 +69,7 @@ let
     apiVersion = "v1";
     kind = "ServiceAccount";
     metadata = {
-      name = "jobs-list-ui";
+      name = "job-list-ui";
       namespace = "default";
     };
   };
@@ -142,18 +142,34 @@ let
     metadata.name = "job-list-ui";
     spec = {
       parentRefs = [{ name = "example-gateway"; }];
-      rules = [{
-        matches = [{
-          path = {
-            type = "PathPrefix";
-            value = "/";
-          };
-        }];
-        backendRefs = [{
-          name = "job-list-ui";
-          port = 80;
-        }];
-      }];
+      rules = [
+        {
+          matches = [{
+            path = {
+              type = "PathPrefix";
+              value = "/";
+            };
+          }];
+          backendRefs = [{
+            name = "job-list-ui";
+            port = 80;
+          }];
+        }
+        {
+          matches = [{
+            path = {
+              type = "RegularExpression";
+              value = "/[^/]+"; # Matches /:id pattern
+            };
+            method = "DELETE";
+          }];
+          backendRefs = [{
+            name = "job-list-ui";
+            port = 80;
+          }];
+        }
+
+      ];
     };
   };
 

@@ -196,7 +196,13 @@
           # MY_CUSTOM_DEVELOPMENT_VAR = "something else";
 
           # Extra inputs can be added here; cargo and rustc are provided by default.
-          packages = [ pkgs.cargo-hakari pkgs.rust-analyzer ];
+          packages = [
+            pkgs.cargo-hakari
+            pkgs.rust-analyzer
+            pkgs.tilt
+            pkgs.ctlptl
+            pkgs.kind
+          ];
         };
       });
 }

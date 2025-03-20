@@ -101,7 +101,7 @@ async fn reconcile(build: Arc<NixBuild>, ctx: Arc<ContextData>) -> Result<Action
             Ok(Action::requeue(Duration::from_secs(30)))
         }
         Err(e) => {
-            // Only create new job if build isn't already complete/failed
+            // clearly sufficient?
             if new_status.phase != "Completed" && new_status.phase != "Failed" {
                 let owner_reference = build.controller_owner_ref(&()).unwrap();
                 tracing::info!(
@@ -219,7 +219,7 @@ fn create_build_job(
                     .git_ref
                     .as_ref()
                     .map(|r| format!("git checkout {}", r))
-                .unwrap_or_default(),
+                    .unwrap_or_default(),
                 "nix-serve.default.svc.cluster.local:3000",
                 build
                     .spec
