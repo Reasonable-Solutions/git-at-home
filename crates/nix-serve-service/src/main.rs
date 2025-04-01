@@ -138,10 +138,6 @@ trait NixCacheStorage {
     async fn put_nar(&self, hash: &str, content: axum::body::Body) -> Result<(), StatusCode>;
 }
 
-struct LocalDiskStorage {
-    base_dir: String,
-}
-
 // For hetzner buckets
 struct S3Storage {
     bucket: String,
@@ -149,13 +145,122 @@ struct S3Storage {
     credential: (String, String),
 }
 
-// impl NixCacheStorage for LocalDiskStorage {
-//     async fn get_narinfo(&self, hash: &str) -> Result<String, StatusCode> {
-//         disk_get_nar(hash)
-//     }
-//     async fn put_narinfo(&self, hash: &str, content: String) -> Result<String, StatusCode> {
-//         disk_put_narinfo(hash, content)
-//     }
+use axum::body::Body;
+use bytes::Bytes;
+use s3::{creds::Credentials, request::ResponseData, Bucket, Region};
+use std::io::Cursor;
+use tokio::io::AsyncReadExt;
 
-//     //impl NixCacheStorage for S3Storage {
-// }
+impl NixCacheStorage for S3Storage {
+    async fn get_narinfo(&self, hash: &str) -> Result<String, StatusCode> {
+        let region = Region::Custom {
+            region: "eu-central-1".to_owned(), // Adjust for Hetzner
+            endpoint: "https://s3.eu-central-1.amazonaws.com".to_owned(), // Adjust endpoint for Hetzner
+        };
+
+        let credentials = Credentials::new(
+            Some(&self.credential.0),
+            Some(&self.credential.1),
+            None,
+            None,
+            None,
+        )
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        let bucket = Bucket::new(&self.bucket, region, credentials)
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        let path = format!("{}/{}.narinfo", self.base_dir, hash);
+
+        let (data, _) = bucket
+            .get_object(&path)
+            .await
+            .map_err(|_| StatusCode::NOT_FOUND)?;
+
+        String::from_utf8(data).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
+    }
+
+    async fn put_narinfo(&self, hash: &str, content: String) -> Result<(), StatusCode> {
+        let region = Region::Custom {
+            region: "eu-central-1".to_owned(),
+            endpoint: "https://s3.eu-central-1.amazonaws.com".to_owned(),
+        };
+
+        let credentials = Credentials::new(
+            Some(&self.credential.0),
+            Some(&self.credential.1),
+            None,
+            None,
+            None,
+        )
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        let bucket = Bucket::new(&self.bucket, region, credentials)
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        let path = format!("{}/{}.narinfo", self.base_dir, hash);
+
+        bucket
+            .put_object(&path, content.as_bytes())
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        Ok(())
+    }
+
+    async fn get_nar(&self, hash: &str) -> Result<Bytes, StatusCode> {
+        let region = Region::Custom {
+            region: "eu-central-1".to_owned(),
+            endpoint: "https://s3.eu-central-1.amazonaws.com".to_owned(),
+        };
+
+        let credentials = Credentials::new(
+            Some(&self.credential.0),
+            Some(&self.credential.1),
+            None,
+            None,
+            None,
+        )
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        let bucket = Bucket::new(&self.bucket, region, credentials)
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        let path = format!("{}/nar/{}.nar", self.base_dir, hash);
+
+        let ResponseData(data, _) = bucket
+            .get_object(&path)
+            .await
+            .map_err(|_| StatusCode::NOT_FOUND)?;
+
+        Ok(Bytes::from(data))
+    }
+
+    async fn put_nar(&self, hash: &str, content: Body) -> Result<(), StatusCode> {
+        let region = Region::Custom {
+            region: "eu-central-1".to_owned(),
+            endpoint: "https://s3.eu-central-1.amazonaws.com".to_owned(),
+        };
+
+        let credentials = Credentials::new(
+            Some(&self.credential.0),
+            Some(&self.credential.1),
+            None,
+            None,
+            None,
+        )
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        let bucket = Bucket::new(&self.bucket, region, credentials)
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        let path = format!("{}/{}.narinfo", self.base_dir, hash);
+
+        bucket
+            .put_object(&path, content.as_bytes())
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        Ok(())
+    }
+}

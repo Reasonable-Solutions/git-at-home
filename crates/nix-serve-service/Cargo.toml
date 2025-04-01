@@ -9,6 +9,7 @@ bytes = "1.10.0"
 common = { path = "../common" }
 futures = "0.3.31"
 my-workspace-hack = { version = "0.1", path = "../my-workspace-hack" }
+rust-s3 = "0.35.1"
 tokio = { version = "1.0", features = ["full"] }
 tokio-util = "0.7.14"
 tower-http = "0.6.2"
