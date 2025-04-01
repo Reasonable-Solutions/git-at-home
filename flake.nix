@@ -178,7 +178,7 @@
         packages = {
           inherit build-controller nix-serve-service nix-serve ui-yamls;
           build-controller-image = controller.image;
-          build-controller-manifests = controller.manifests;
+          build-controller-chart = controller.nixBuildControllerChart;
         } // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
           my-workspace-llvm-coverage = craneLibLLvmTools.cargoLlvmCov
             (commonArgs // { inherit cargoArtifacts; });

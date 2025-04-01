@@ -1,5 +1,5 @@
 use axum::{
-    body::Bytes,
+    body::{BodyDataStream, Bytes},
     extract::Path,
     http::StatusCode,
     routing::{get, put},
@@ -9,6 +9,7 @@ use axum::{
 use futures::StreamExt;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
+use tokio_util;
 use tracing::{error, info, warn, Level};
 use uuid::{self, Uuid};
 /* Productionize
@@ -41,7 +42,7 @@ async fn get_cache_info() -> &'static str {
 
 // These could just be generated on the fly. A narinfo is just a few lines describing a
 // narfile
-async fn get_narinfo(Path(hash): Path<String>) -> Result<String, StatusCode> {
+async fn disk_get_narinfo(Path(hash): Path<String>) -> Result<String, StatusCode> {
     info!(hash = %hash, "Fetching narinfo");
     match fs::read_to_string(format!("nar/{}", hash)).await {
         Ok(content) => Ok(content),
@@ -52,12 +53,21 @@ async fn get_narinfo(Path(hash): Path<String>) -> Result<String, StatusCode> {
     }
 }
 
-async fn get_nar(Path(hash): Path<String>) -> Result<Bytes, StatusCode> {
+async fn disk_get_nar(
+    Path(hash): Path<String>,
+) -> Result<impl axum::response::IntoResponse, StatusCode> {
     info!(hash = %hash, "Fetching NAR");
-    match fs::read(format!("nar/{}", hash)).await {
-        Ok(bytes) => {
-            info!(hash = %hash, size = bytes.len(), "Successfully read NAR");
-            Ok(Bytes::from(bytes))
+    match tokio::fs::File::open(format!("nar/{}", hash)).await {
+        Ok(file) => {
+            info!(hash = %hash, "Successfully opened NAR file");
+            let stream = tokio_util::io::ReaderStream::new(file).map(|result| {
+                result.map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))
+            });
+
+            Ok(axum::response::Response::builder()
+                .header("Content-Type", "application/octet-stream")
+                .body(axum::body::Body::from_stream(stream))
+                .unwrap())
         }
         Err(_) => {
             info!(hash = %hash, "NAR not found");
@@ -66,7 +76,7 @@ async fn get_nar(Path(hash): Path<String>) -> Result<Bytes, StatusCode> {
     }
 }
 
-async fn upload_narinfo(Path(hash): Path<String>, body: String) -> StatusCode {
+async fn disk_put_narinfo(Path(hash): Path<String>, body: String) -> StatusCode {
     info!(hash = %hash, size = body.len(), "Uploading narinfo");
     match fs::write(format!("nar/{}", hash), body).await {
         Ok(_) => {
@@ -80,17 +90,16 @@ async fn upload_narinfo(Path(hash): Path<String>, body: String) -> StatusCode {
     }
 }
 
-async fn upload_nar(
+async fn disk_put_nar(
     Path(hash): Path<String>,
     body: axum::body::Body,
 ) -> Result<StatusCode, StatusCode> {
     warn!(hash = %hash, "Starting NAR upload");
-    let temp_path = format!("nar/{}.{}.temp", hash, Uuid::new_v4()); // TODO: slap a uuid on this guy?
+    let temp_path = format!("nar/{}.{}.temp", hash, Uuid::new_v4());
     let final_path = format!("nar/{}", hash);
 
     // We create a temporary file and if everything goes well we yeet that into the
     // cache.
-    // TODO: There is no cleanup :upside-down:
     let mut file = match tokio::fs::File::create(&temp_path).await {
         Ok(file) => file,
         Err(e) => {
@@ -132,10 +141,10 @@ async fn main() {
 
     let app = Router::new()
         .route("/nix-cache-info", get(get_cache_info))
-        .route("/:hash.narinfo", get(get_narinfo))
-        .route("/:hash.narinfo", put(upload_narinfo))
-        .route("/nar/:hash.nar", get(get_nar))
-        .route("/nar/:hash.nar", put(upload_nar));
+        .route("/:hash.narinfo", get(disk_get_narinfo))
+        .route("/:hash.narinfo", put(disk_put_narinfo))
+        .route("/nar/:hash.nar", get(disk_get_nar))
+        .route("/nar/:hash.nar", put(disk_get_nar));
 
     let addr = "0.0.0.0:3000";
     info!("Listening on {}", addr);
@@ -143,3 +152,30 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
+
+trait NixCacheStorage {
+    async fn get_narinfo(&self, hash: &str) -> Result<String, StatusCode>;
+    async fn put_narinfo(&self, hash: &str, content: String) -> Result<(), StatusCode>;
+    async fn get_nar(&self, hash: &str) -> Result<Bytes, StatusCode>;
+    async fn put_nar(&self, hash: &str, content: axum::body::Body) -> Result<(), StatusCode>;
+}
+
+struct LocalDiskStorage {
+    base_dir: String,
+}
+
+// struct S3Storage {
+//     bucket: String,
+//     credentials: String,
+// }
+
+// impl NixCacheStorage for LocalDiskStorage {
+//     async fn get_narinfo(&self, hash: &str) -> Result<String, StatusCode> {
+//         disk_get_nar(hash)
+//     }
+//     async fn put_narinfo(&self, hash: &str, content: String) -> Result<String, StatusCode> {
+//         disk_put_narinfo(hash, content)
+//     }
+
+//     //impl NixCacheStorage for S3Storage {
+// }
