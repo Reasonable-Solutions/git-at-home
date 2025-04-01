@@ -12,6 +12,7 @@ use tokio::io::AsyncWriteExt;
 use tokio_util;
 use tracing::{error, info, warn, Level};
 use uuid::{self, Uuid};
+
 /* Productionize
 
 build helmcharts for nav-dev, Feature.yaml.
@@ -53,21 +54,15 @@ async fn disk_get_narinfo(Path(hash): Path<String>) -> Result<String, StatusCode
     }
 }
 
+// TODO: this should be streaming
 async fn disk_get_nar(
     Path(hash): Path<String>,
 ) -> Result<impl axum::response::IntoResponse, StatusCode> {
     info!(hash = %hash, "Fetching NAR");
-    match tokio::fs::File::open(format!("nar/{}", hash)).await {
-        Ok(file) => {
-            info!(hash = %hash, "Successfully opened NAR file");
-            let stream = tokio_util::io::ReaderStream::new(file).map(|result| {
-                result.map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))
-            });
-
-            Ok(axum::response::Response::builder()
-                .header("Content-Type", "application/octet-stream")
-                .body(axum::body::Body::from_stream(stream))
-                .unwrap())
+    match fs::read(format!("nar/{}", hash)).await {
+        Ok(bytes) => {
+            info!(hash = %hash, size = bytes.len(), "Successfully read NAR");
+            Ok(Bytes::from(bytes))
         }
         Err(_) => {
             info!(hash = %hash, "NAR not found");
@@ -144,7 +139,7 @@ async fn main() {
         .route("/:hash.narinfo", get(disk_get_narinfo))
         .route("/:hash.narinfo", put(disk_put_narinfo))
         .route("/nar/:hash.nar", get(disk_get_nar))
-        .route("/nar/:hash.nar", put(disk_get_nar));
+        .route("/nar/:hash.nar", put(disk_put_nar));
 
     let addr = "0.0.0.0:3000";
     info!("Listening on {}", addr);
@@ -164,10 +159,12 @@ struct LocalDiskStorage {
     base_dir: String,
 }
 
-// struct S3Storage {
-//     bucket: String,
-//     credentials: String,
-// }
+// For hetzner buckets
+struct S3Storage {
+    bucket: String,
+    base_dir: String,
+    credential: (String, String),
+}
 
 // impl NixCacheStorage for LocalDiskStorage {
 //     async fn get_narinfo(&self, hash: &str) -> Result<String, StatusCode> {
