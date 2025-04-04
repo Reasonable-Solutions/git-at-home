@@ -1,0 +1,48 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: gitaccesses.git.platform.dev
+spec:
+  group: git.platform.dev
+  names:
+    categories: []
+    kind: GitAccess
+    plural: gitaccesses
+    shortNames: []
+    singular: gitaccess
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.repo
+      name: Repo
+      type: string
+    - jsonPath: .spec.user
+      name: User
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Auto-generated derived type for GitAccessSpec via `CustomResource`
+        properties:
+          spec:
+            properties:
+              permissions:
+                items:
+                  type: string
+                type: array
+              repo:
+                type: string
+              user:
+                type: string
+            required:
+            - permissions
+            - repo
+            - user
+            type: object
+        required:
+        - spec
+        title: GitAccess
+        type: object
+    served: true
+    storage: true
+    subresources: {}
