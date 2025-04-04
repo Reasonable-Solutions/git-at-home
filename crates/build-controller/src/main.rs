@@ -165,7 +165,7 @@ async fn update_build_status(
 ) -> Result<(), Error> {
     tracing::info!("update status: {:?}", &build.metadata.name);
     let status_patch = serde_json::json!({
-        "apiVersion": "build.example.com/v1alpha1",
+        "apiVersion": "build.fyfaen.as/v1alpha1",
         "kind": "NixBuild",
         "status": status
     });
