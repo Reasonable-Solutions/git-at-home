@@ -90,7 +90,7 @@ let
               serviceAccountName = pname;
               containers = [{
                 name = pname;
-                image = "${pname}:${version}";
+                image = "registry.fyfaen.as/nix-build-controller:1.0.0";
                 env = [{
                   name = "RUST_LOG";
                   value = "info";
