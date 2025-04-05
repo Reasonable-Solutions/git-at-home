@@ -1,4 +1,4 @@
-use axum::{routing::get, Router, routing::delete};
+use axum::{routing::delete, routing::get, Router};
 use build_controller::NixBuild;
 use kube::{api::DeleteParams, Api, Client};
 use tracing::{info, Level};
@@ -11,8 +11,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get(index_page))
         .route("/jobs-list", get(list_jobs))
-        .route("/:name", delete(delete_job));
-
+        .route("/jobs-list/:name", delete(delete_job));
 
     let addr = "0.0.0.0:3000";
     info!("Listening on {}", &addr);
@@ -79,7 +78,7 @@ async fn index_page() -> axum::response::Html<String> {
 
 async fn list_jobs() -> axum::response::Html<String> {
     let client = Client::try_default().await.unwrap();
-    let builds: Api<NixBuild> = Api::namespaced(client, "default");
+    let builds: Api<NixBuild> = Api::namespaced(client, "nixbuilder");
 
     let builds = builds.list(&Default::default()).await.unwrap();
 
@@ -111,23 +110,31 @@ async fn list_jobs() -> axum::response::Html<String> {
     ))
 }
 
-async  fn delete_job(job: String) -> axum::response::Html<String> {
+async fn delete_job(job: String) -> axum::response::Html<String> {
     info!("deletu, {}", &job);
     let client = Client::try_default().await.unwrap();
-    let builds: Api<NixBuild> = Api::namespaced(client, "default");
-    builds.delete(&job, &DeleteParams::foreground()).await.unwrap();
+    let builds: Api<NixBuild> = Api::namespaced(client, "nixbuilder");
+    builds
+        .delete(&job, &DeleteParams::foreground())
+        .await
+        .unwrap();
     let builds = builds.list(&Default::default()).await.unwrap();
 
-    let builds_html = builds.items.iter()
-        .map(|build| format!(
+    let builds_html =
+        builds
+            .items
+            .iter()
+            .map(|build| {
+                format!(
             "<tr><td><a hx-boost=\"true\" href=/jobs/{}>{}</a></td><td>{}</td><td>{}</td></tr>",
             build.metadata.name.clone().unwrap_or_default(),
             build.metadata.name.clone().unwrap_or_default(),
             build.status.as_ref().map_or("Unknown".to_string(), |s| s.phase.clone()),
             build.spec.image_name
-        ))
-        .collect::<Vec<_>>()
-        .join("\n");
+        )
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
 
     axum::response::Html(format!(
         r#"<table>

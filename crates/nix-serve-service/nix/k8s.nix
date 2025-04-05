@@ -5,6 +5,7 @@ let
     kind: PersistentVolumeClaim
     metadata:
       name: nix-serve-data-pvc
+      namespace: nixbuilder
     spec:
       accessModes:
         - ReadWriteOnce
@@ -16,6 +17,7 @@ let
     kind: Deployment
     metadata:
       name: nix-serve
+      namespace: nixbuilder
     spec:
       replicas: 1
       selector:
@@ -26,9 +28,11 @@ let
           labels:
             app: nix-serve
         spec:
+          imagePullSecrets:
+            - name: "nix-serve-regcred"
           containers:
           - name: nix-serve
-            image: nix-serve-service:II
+            image: registry.fyfaen.as/nix-serve-service:1.0.0
             ports:
             - containerPort: 3000
             volumeMounts:
@@ -43,6 +47,7 @@ let
     kind: Service
     metadata:
       name: nix-serve
+      namespace: nixbuilder
     spec:
       selector:
         app: nix-serve

@@ -1,5 +1,5 @@
-use axum::{routing::get, Router};
 use axum::extract::Path;
+use axum::{routing::get, Router};
 use build_controller::NixBuild;
 use kube::{Api, Client};
 use tracing::{error, info, warn, Level};
@@ -10,8 +10,7 @@ async fn main() {
 
     info!("Starting job-list-ui");
 
-    let app = Router::new()
-        .route("/jobs/:name", get(get_job));
+    let app = Router::new().route("/jobs/:name", get(get_job));
 
     let addr = "0.0.0.0:3000";
     info!("Listening on {}", addr);
@@ -21,7 +20,7 @@ async fn main() {
 
 async fn get_job(Path(name): Path<String>) -> axum::response::Html<String> {
     let client = Client::try_default().await.unwrap();
-    let builds: Api<NixBuild> = Api::namespaced(client, "default");
+    let builds: Api<NixBuild> = Api::namespaced(client, "nixbuilder");
 
     let build = builds.get(&name).await.unwrap();
 

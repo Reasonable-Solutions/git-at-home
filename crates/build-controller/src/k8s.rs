@@ -17,7 +17,7 @@ pub struct BuildCondition {
 
 #[derive(CustomResource, Deserialize, Serialize, Clone, Debug, JsonSchema)]
 #[kube(
-    group = "build.example.com",
+    group = "build.fyfaen.as",
     version = "v1alpha1",
     kind = "NixBuild",
     namespaced,

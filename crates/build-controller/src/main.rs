@@ -1,5 +1,6 @@
 use futures::StreamExt;
 use k8s_openapi::api::batch::v1::{Job, JobSpec};
+use k8s_openapi::api::core::v1::LocalObjectReference;
 use k8s_openapi::api::core::v1::{Container, PodSpec, PodTemplateSpec, ResourceRequirements};
 use k8s_openapi::apimachinery::pkg::api::resource::Quantity;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::{ObjectMeta, OwnerReference};
@@ -196,11 +197,8 @@ fn create_build_job(
 
     let container = Container {
         name: "builder".to_string(),
-        image: Some("nix-builder:I".to_string()),
-        // PROD: TODO:
-        image_pull_policy: Some("Never".to_owned()),
+        image: Some("registry.fyfaen.as/nix-builder:1.0.0".to_string()),
         // TODO: this shouldn't be a string ffs.
-        // TODO: THis needs to be a rootless container, in real life applications
         // TODO: push-to-cache.sh should not be defined here either.
         // TODO: post-build-hooks are blocking, there should be a "put-out-path-on-queue" process called in the hook
         //       and a separate worker for actually pushing build results. The docs for --post-build-hooks says that what we're doing here is a poor idea
@@ -231,7 +229,7 @@ fn create_build_job(
                     .as_ref()
                     .map(|r| format!("git checkout {}", r))
                     .unwrap_or_default(),
-                "nix-serve.default.svc.cluster.local:3000", // TODO: configurable
+                "nix-serve.nixbuilder.svc.cluster.local:3000", // TODO: configurable
                 build
                     .spec
                     .nix_attr
@@ -253,7 +251,9 @@ fn create_build_job(
             template: PodTemplateSpec {
                 spec: Some(PodSpec {
                     containers: vec![container],
-
+                    image_pull_secrets: Some(vec![LocalObjectReference {
+                        name: "nix-serve-regcred".to_string(),
+                    }]),
                     restart_policy: Some("Never".to_string()),
                     ..PodSpec::default()
                 }),
@@ -299,7 +299,7 @@ async fn main() -> Result<(), Error> {
         client: client.clone(),
     });
 
-    let builds: Api<NixBuild> = Api::all(client);
+    let builds: Api<NixBuild> = Api::<NixBuild>::namespaced(client, "nixbuilder"); // Api::all(client); <- for clusterwide resources.
     tracing::info!("Watching NixBuild resources across all namespaces");
 
     Controller::new(builds, Default::default())

@@ -3,7 +3,7 @@
 let
   pname = "nix-build-controller";
   version = "0.1.0";
-  image = pkgs.dockertools.buildImage {
+  image = pkgs.dockerTools.buildImage {
     name = pname;
     tag = version;
     config = {
@@ -18,7 +18,7 @@ let
     metadata = { name = "nix-serve-data-pvc"; };
     spec = {
       accessModes = [ "ReadWriteOnce" ];
-      resources = { requests = { storage = "20Gi"; }; };
+      resources = { requests = { storage = "100Gi"; }; };
     };
   };
 
@@ -111,14 +111,10 @@ let
       echo '${
         builtins.toJSON {
           image = {
-            repository =
-              "europe-north1-docker.pkg.dev/nais-io/nais/images/nix-build-controller";
+            repository = "registry.fyfaen.as/nix-build-controller:1.0.1";
             pullPolicy = "Always";
             tag = "latest";
           };
-          clusterName = "dev-nais-dev";
-          tenant = "dev.nais.io";
-
           nixbuild.nixserveUrl = "nix-serve.svc";
         }
       }' > $out/values.yaml
@@ -129,7 +125,7 @@ let
           kind = "Deployment";
           metadata = {
             name = pname;
-            namespace = "nais-systems";
+            namespace = "nixbuilder";
           };
           spec = {
             replicas = 1;
@@ -140,8 +136,7 @@ let
                 serviceAccountName = pname;
                 containers = [{
                   name = pname;
-                  image = "${pname}:I";
-                  imagePullPolicy = "Never";
+                  image = "registry.fyfaen.as/nix-build-controller:1.0.1";
                   env = [{
                     name = "RUST_LOG";
                     value = "info";
@@ -159,7 +154,7 @@ let
           kind = "Role";
           metadata = {
             name = pname;
-            namespace = "nais-system";
+            namespace = "nixbuilder";
           };
           rules = [
             {
@@ -168,7 +163,7 @@ let
               verbs = [ "create" "delete" "get" "list" "watch" ];
             }
             {
-              apiGroups = [ "build.nais.io" ];
+              apiGroups = [ "build.fyfaen.as" ];
               resources = [ "nixbuilds" "nixbuilds/status" ];
               verbs = [ "get" "list" "watch" "update" "create" "patch" ];
             }
@@ -182,12 +177,12 @@ let
           kind = "RoleBinding";
           metadata = {
             name = pname;
-            namespace = "nais-system";
+            namespace = "nixbuilder";
           };
           subjects = [{
             kind = "ServiceAccount";
             name = pname;
-            namespace = "nais-system";
+            namespace = "nixbuilder";
           }];
           roleRef = {
             kind = "ClusterRole";
@@ -203,11 +198,10 @@ let
           kind = "ServiceAccount";
           metadata = {
             name = pname;
-            namespace = "nais-systems";
+            namespace = "nixbuilder";
           };
         }
       }' > $out/templates/${pname}-serviceaccount.yaml
   '';
 
 in { inherit image nixBuildControllerChart; }
-

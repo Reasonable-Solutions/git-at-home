@@ -1,9 +1,10 @@
-apiVersion: build.example.com/v1alpha1
+apiVersion: build.fyfaen.as/v1alpha1
 kind: NixBuild
 metadata:
   name: build-a-linux-kernel
+  namespace: nixbuilder
 spec:
   git_repo: "https://github.com/nais/cli.git"
   git_ref: "main"          # optional, default is main
   nix_attr: "packages.aarch64-linux.nais"  # optional, default is _default_
-  image_name: "nixos/nix:latest"
+  image_name: "registry.fyfaen.as/nix-builder:1.0.0"

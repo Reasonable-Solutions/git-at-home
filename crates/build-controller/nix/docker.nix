@@ -1,4 +1,4 @@
-{ pkgs, rustBinary }:
+{ pkgs, build-controller }:
 
 let
   pname = "nix-build-controller";
@@ -8,7 +8,7 @@ let
     name = pname;
     tag = version;
     config = {
-      Cmd = [ "${rustBinary}/bin/${pname}" ];
+      Cmd = [ "${build-controller}/bin/${pname}" ];
       Env = [ "RUST_LOG=info" ];
     };
   };
@@ -19,7 +19,7 @@ let
       builtins.toJSON {
         apiVersion = "apiextensions.k8s.io/v1";
         kind = "CustomResourceDefinition";
-        metadata = { name = "nixbuilds.fyfaen.as"; };
+        metadata = { name = "nixbuilds.build.fyfaen.as"; };
         spec = {
           group = "build.fyfaen.as";
           names = {
@@ -80,17 +80,22 @@ let
       builtins.toJSON {
         apiVersion = "apps/v1";
         kind = "Deployment";
-        metadata = { name = pname; };
+        metadata = {
+          name = pname;
+          namespace = "nixbuilder";
+        };
+
         spec = {
           replicas = 1;
           selector.matchLabels = { app = pname; };
           template = {
             metadata.labels = { app = pname; };
             spec = {
+              imagePullSecrets = [{ name = "nix-serve-regcred"; }];
               serviceAccountName = pname;
               containers = [{
                 name = pname;
-                image = "registry.fyfaen.as/nix-build-controller:1.0.0";
+                image = "registry.fyfaen.as/nix-build-controller:1.0.3";
                 env = [{
                   name = "RUST_LOG";
                   value = "info";
@@ -108,18 +113,23 @@ let
         kind = "Role";
         metadata = {
           name = pname;
-          namespace = "nixbuild";
+          namespace = "nixbuilder";
         };
         rules = [
           {
             apiGroups = [ "batch" ];
             resources = [ "jobs" ];
-            verbs = [ "create" "delete" "get" "list" "watch" ];
+            verbs = [ "create" "delete" "get" "list" "watch" "patch" ];
           }
           {
             apiGroups = [ "build.fyfaen.as" ];
             resources = [ "nixbuilds" ];
-            verbs = [ "get" "list" "watch" "update" ];
+            verbs = [ "get" "list" "watch" "update" "patch" ];
+          }
+          {
+            apiGroups = [ "build.fyfaen.as" ];
+            resources = [ "nixbuilds/status" ];
+            verbs = [ "patch" ];
           }
         ];
       }
@@ -131,12 +141,12 @@ let
         kind = "RoleBinding";
         metadata = {
           name = pname;
-          namespace = "nixbuild";
+          namespace = "nixbuilder";
         };
         subjects = [{
           kind = "ServiceAccount";
           name = pname;
-          namespace = "nixbuild";
+          namespace = "nixbuilder";
         }];
         roleRef = {
           kind = "Role";
@@ -152,7 +162,7 @@ let
         kind = "ServiceAccount";
         metadata = {
           name = pname;
-          namespace = "nixbuild";
+          namespace = "nixbuilder";
         };
       }
     }' > $out/serviceaccount.yaml

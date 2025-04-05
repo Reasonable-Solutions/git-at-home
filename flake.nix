@@ -98,7 +98,7 @@
           src = fileSetForCrate ./crates/nix-serve-service;
         });
 
-        controller = pkgs.callPackage ./crates/build-controller/nix/k8s.nix {
+        controller = pkgs.callPackage ./crates/build-controller/nix/docker.nix {
           inherit build-controller;
         };
 
@@ -112,6 +112,7 @@
               toString index
             }.yaml
           '';
+
         in lib.concatStrings (lib.imap0 makeYamlFile k8s-ui.resources));
 
       in {
@@ -176,9 +177,10 @@
         };
 
         packages = {
-          inherit build-controller nix-serve-service nix-serve ui-yamls;
+          inherit build-controller nix-serve-service nix-serve ui-yamls
+            controller;
           build-controller-image = controller.image;
-          build-controller-chart = controller.nixBuildControllerChart;
+          #          build-controller-chart = controller.nixBuildControllerChart;
         } // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
           my-workspace-llvm-coverage = craneLibLLvmTools.cargoLlvmCov
             (commonArgs // { inherit cargoArtifacts; });

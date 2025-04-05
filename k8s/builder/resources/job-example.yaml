@@ -2,6 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: nix-build-job
+  namespace: nixbuilder
 spec:
   ttlSecondsAfterFinished: 3600
   template:
@@ -11,10 +12,10 @@ spec:
         image: nixos/nix
         resources:
           requests:
-            memory: "4Gi"
+            memory: "2Gi"
             cpu: "1"
           limits:
-            memory: "4Gi"
+            memory: "2Gi"
             cpu: "1"
         command:
         - /bin/sh
