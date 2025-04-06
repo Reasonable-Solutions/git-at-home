@@ -115,6 +115,19 @@
 
         in lib.concatStrings (lib.imap0 makeYamlFile k8s-ui.resources));
 
+        webhook =
+          import ./crates/build-controller/nix/webhook.nix { inherit pkgs; };
+        webhook-yamls = pkgs.runCommand "webhook-yamls" { } (let
+          makeYamlFile = name: resource: ''
+            mkdir -p $out
+            echo '${
+              pkgs.lib.generators.toYAML { } resource
+            }' > $out/${name}.yaml
+          '';
+
+          yamlStrings = lib.mapAttrsToList makeYamlFile webhook.resources;
+        in lib.concatStrings yamlStrings);
+
       in {
         checks = {
           # Build the crates as part of `nix flake check` for convenience
@@ -178,7 +191,7 @@
 
         packages = {
           inherit build-controller nix-serve-service nix-serve ui-yamls
-            controller;
+            webhook-yamls controller;
           build-controller-image = controller.image;
           #          build-controller-chart = controller.nixBuildControllerChart;
         } // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {

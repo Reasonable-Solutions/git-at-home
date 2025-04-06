@@ -8,6 +8,10 @@ publish = false
 name = "crds"
 path = "src/bin/crds.rs"
 
+[[bin]]
+name = "webhook"
+path = "src/bin/webhook.rs"
+
 [lib]
 path = "src/lib.rs"
 
