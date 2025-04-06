@@ -117,6 +117,7 @@
 
         webhook =
           import ./crates/build-controller/nix/webhook.nix { inherit pkgs; };
+
         webhook-yamls = pkgs.runCommand "webhook-yamls" { } (let
           makeYamlFile = name: resource: ''
             mkdir -p $out
@@ -125,9 +126,9 @@
             }' > $out/${name}.yaml
           '';
 
-          yamlStrings = lib.mapAttrsToList makeYamlFile webhook.resources;
-        in lib.concatStrings yamlStrings);
-
+          shellScript = pkgs.lib.concatStringsSep "\n"
+            (pkgs.lib.mapAttrsToList makeYamlFile webhook);
+        in shellScript);
       in {
         checks = {
           # Build the crates as part of `nix flake check` for convenience

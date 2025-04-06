@@ -1,4 +1,4 @@
-use axum::{extract::State, routing::post, Json, Router};
+use axum::{extract::State, http::StatusCode, routing::post, Json, Router};
 use build_controller::*;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::{Api, Client, ResourceExt};
@@ -13,10 +13,25 @@ struct BuildRequest {
     image_name: String,
 }
 
+use std::env;
+
 async fn handle_build(
     State(client): State<Client>,
+    headers: axum::http::HeaderMap,
     Json(payload): Json<BuildRequest>,
-) -> Result<String, (axum::http::StatusCode, String)> {
+) -> Result<String, (StatusCode, String)> {
+    let expected = env::var("WEBHOOK_SECRET")
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "missing secret".into()))?;
+
+    let got = headers
+        .get("x-webhook-token")
+        .and_then(|v| v.to_str().ok())
+        .ok_or((StatusCode::UNAUTHORIZED, "missing token".into()))?;
+
+    if got != expected {
+        return Err((StatusCode::UNAUTHORIZED, "invalid token".into()));
+    }
+
     let builds: Api<NixBuild> = Api::namespaced(client.clone(), "nixbuilder");
     let build = NixBuild {
         metadata: ObjectMeta {
@@ -40,6 +55,7 @@ async fn handle_build(
         )),
     }
 }
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt().with_max_level(Level::INFO).init();

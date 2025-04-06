@@ -1,7 +1,7 @@
 FROM rust:latest as builder
 WORKDIR /app
 COPY . .
-RUN cargo build --release --package build-controller --bin webhook --workspace
+RUN cargo build --release --package build-controller --bin webhook
 
 FROM debian:latest
 WORKDIR /app

@@ -14,10 +14,19 @@ let
           metadata.labels.app = "webhook";
           spec = {
             serviceAccountName = "webhook";
+            imagePullSecrets = [{ name = "nix-serve-regcred"; }];
             containers = [{
               name = "webhook";
-              image = "registry.fyfaen.as/nix-webhook:1.0.0";
+              image = "registry.fyfaen.as/nix-webhook:1.0.1";
               ports = [{ containerPort = 3000; }];
+              env = [{
+                # This should be a projected mount!
+                name = "WEBHOOK_SECRET";
+                valueFrom.secretKeyRef = {
+                  name = "webhook-secret";
+                  key = "token";
+                };
+              }];
             }];
           };
         };
@@ -99,7 +108,7 @@ let
           matches = [{
             path = {
               type = "PathPrefix";
-              value = "/trigger";
+              value = "/trigger-build";
             };
           }];
           backendRefs = [{
@@ -110,4 +119,4 @@ let
       };
     };
   };
-in { resources = attrValues webhook; }
+in webhook
