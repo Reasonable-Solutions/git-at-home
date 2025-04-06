@@ -13,28 +13,6 @@ use tokio_util;
 use tracing::{error, info, warn, Level};
 use uuid::{self, Uuid};
 
-/* Productionize
-
-build helmcharts for nav-dev, Feature.yaml.
-bootstrap w. dockerfiles and get them into gar.
-Fasit-deploy github action, approve repo in terraform gh-nix-build
-one feature, one chart.
-Do not hardcode nix-serve url
-
-*/
-
-/* TODO:
-Make it streaming and make transfer-encoding: chunked be a thing [✓]
-Deal with concurrent creation of files by writing to temp and then moving the full file [✓]
-
-It would be cool if narinfo could be tcp-nodelay and small buffer and
-nars could be large buffers and sendfile. Idk if i can do that in axum or if i need
-to use tower(?) hyper(?). Whatever the bottom of the stack there is.
-
-The narinfo should be an in-memory cache and not hammer the disk for every single operation.
-The in-memory cache should have an inotify process that keeps it updated (can i do that in k8s on a pvc?)
-*/
-
 // TODO: What is a sensible priority value? why does the cache hav it?
 async fn get_cache_info() -> &'static str {
     info!("Serving nix-cache-info");
@@ -90,8 +68,10 @@ async fn disk_put_nar(
     body: axum::body::Body,
 ) -> Result<StatusCode, StatusCode> {
     warn!(hash = %hash, "Starting NAR upload");
-    let temp_path = format!("nar/{}.{}.temp", hash, Uuid::new_v4());
-    let final_path = format!("nar/{}", hash);
+
+    let cache_dir = "nar"; // this is config
+    let temp_path = format!("{}/{}.{}.temp", cache_dir, hash, Uuid::new_v4());
+    let final_path = format!("{}/{}", cache_dir, hash);
 
     // We create a temporary file and if everything goes well we yeet that into the
     // cache.
@@ -131,7 +111,10 @@ async fn disk_put_nar(
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt().with_max_level(Level::INFO).init();
-
+    let cache_dir = "nar";
+    tokio::fs::create_dir_all(cache_dir)
+        .await
+        .expect("failed to create cache dir");
     info!("Starting Nix cache server");
 
     let app = Router::new()

@@ -28,11 +28,15 @@ let
           labels:
             app: nix-serve
         spec:
+          securityContext:
+            runAsUser: 1069
+            runAsGroup: 1069
+            fsGroup: 1069
           imagePullSecrets:
             - name: "nix-serve-regcred"
           containers:
           - name: nix-serve
-            image: registry.fyfaen.as/nix-serve-service:1.0.0
+            image: registry.fyfaen.as/nix-serve-service:1.0.1
             ports:
             - containerPort: 3000
             volumeMounts:

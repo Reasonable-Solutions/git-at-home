@@ -1,7 +1,7 @@
 use futures::StreamExt;
 use k8s_openapi::api::batch::v1::{Job, JobSpec};
-use k8s_openapi::api::core::v1::LocalObjectReference;
 use k8s_openapi::api::core::v1::{Container, PodSpec, PodTemplateSpec, ResourceRequirements};
+use k8s_openapi::api::core::v1::{LocalObjectReference, VolumeMount};
 use k8s_openapi::apimachinery::pkg::api::resource::Quantity;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::{ObjectMeta, OwnerReference};
 use kube::{
@@ -181,47 +181,43 @@ async fn update_build_status(
 
     Ok(())
 }
-
 fn create_build_job(
     build: &NixBuild,
     name: String,
     owner_reference: OwnerReference,
 ) -> Result<Job, Error> {
     let resources = ResourceRequirements {
-        requests: Some(BTreeMap::from([
-            ("cpu".to_string(), Quantity("1".to_string())),
-            ("memory".to_string(), Quantity("4".to_string())),
-        ])),
         ..ResourceRequirements::default()
     };
 
-    let container = Container {
+    let builder = Container {
         name: "builder".to_string(),
-        image: Some("registry.fyfaen.as/nix-builder:1.0.0".to_string()),
-        // TODO: this shouldn't be a string ffs.
-        // TODO: push-to-cache.sh should not be defined here either.
-        // TODO: post-build-hooks are blocking, there should be a "put-out-path-on-queue" process called in the hook
-        //       and a separate worker for actually pushing build results. The docs for --post-build-hooks says that what we're doing here is a poor idea
+        image: Some("registry.fyfaen.as/nix-builder:1.0.3".to_string()),
         command: Some(vec![
-            "/bin/sh".to_string(),
+            "/bin/bash".to_string(),
             "-c".to_string(),
             format!(
                 r#"
+                export PATH="/home/nixuser/.nix-profile/bin:/nix/var/nix/profiles/default/bin:$PATH"
+                export NIX_PATH="/home/nixuser/.nix-defexpr/channels:/nix/var/nix/profiles/per-user/root/channels"
                 echo '#!/usr/bin/env bash' >> /home/nixuser/push-to-cache.sh
                 echo '/home/nixuser/.nix-profile/bin/nix --extra-experimental-features nix-command --extra-experimental-features flakes copy --to http://{} $OUT_PATHS' >> /home/nixuser/push-to-cache.sh
                 chmod +x /home/nixuser/push-to-cache.sh
+                set -ux
                 which nix
+                exec > >(tee /mnt/build.log) 2>&1
                 git clone {} workspace
                 cd workspace
                 {}
-                nix --extra-experimental-features nix-command --extra-experimental-features flakes \
+                echo "[builder] starting"
+                /home/nixuser/.nix-profile/bin/nix --extra-experimental-features nix-command --extra-experimental-features flakes \
                     --option require-sigs false \
                     --option substitute true \
                     --option extra-substituters http://{} \
                     build .#{} \
                     --post-build-hook /home/nixuser/push-to-cache.sh
-                    "#,
-                "nix-serve.default.svc.cluster.local:3000", // TODO: configuration
+                "#,
+                "nix-serve.nixbuilder.svc.cluster.local:3000",
                 build.spec.git_repo,
                 build
                     .spec
@@ -229,12 +225,12 @@ fn create_build_job(
                     .as_ref()
                     .map(|r| format!("git checkout {}", r))
                     .unwrap_or_default(),
-                "nix-serve.nixbuilder.svc.cluster.local:3000", // TODO: configurable
+                "nix-serve.nixbuilder.svc.cluster.local:3000",
                 build
                     .spec
                     .nix_attr
                     .as_ref()
-                    .unwrap_or(&"docker".to_string())
+                    .unwrap_or(&"default".to_string())
             ),
         ]),
         resources: Some(resources),
@@ -250,7 +246,7 @@ fn create_build_job(
         spec: Some(JobSpec {
             template: PodTemplateSpec {
                 spec: Some(PodSpec {
-                    containers: vec![container],
+                    containers: vec![builder],
                     image_pull_secrets: Some(vec![LocalObjectReference {
                         name: "nix-serve-regcred".to_string(),
                     }]),

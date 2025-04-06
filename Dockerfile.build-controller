@@ -1,7 +1,7 @@
 FROM rust:latest as builder
 WORKDIR /app
 COPY . .
-RUN cargo build --release --package build-controller --workspace
+RUN cargo build --release --package build-controller
 
 FROM debian:latest
 WORKDIR /app

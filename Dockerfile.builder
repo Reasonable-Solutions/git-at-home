@@ -1,6 +1,6 @@
-FROM gcr.io/distroless/base-debian11 as final
+FROM gcr.io/distroless/base-debian22 as final
 
-FROM debian:11 as builder
+FROM debian:12 as builder
 RUN apt-get update && apt-get install -y curl xz-utils sudo git coreutils bash ca-certificates libtinfo6
 
 RUN useradd -m nixuser && \
@@ -15,7 +15,7 @@ RUN mkdir -p ~/.config/nix && \
     echo "experimental-features = nix-command flakes" >> ~/.config/nix/nix.conf && \
     echo "extra-experimental-features = flakes" >> ~/.config/nix/nix.conf
 
-FROM debian:11
+FROM debian:12
 RUN apt-get update && \
     apt-get install -y ca-certificates git && \
     apt-get clean && \
