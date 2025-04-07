@@ -61,6 +61,6 @@ pkgs.writeText "deployer-trivial-k8s.yaml" ''
           fsGroup: 1069
         containers:
           - name: nix-deployer
-            image: registry.fyfaen.as/nix-deployer:1.0.0
+            image: registry.fyfaen.as/nix-deploy:1.0.0
             command: ["/app/deploy"]
 ''
