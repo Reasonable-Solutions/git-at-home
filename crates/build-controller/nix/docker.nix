@@ -17,67 +17,6 @@ let
     mkdir -p $out
     echo '${
       builtins.toJSON {
-        apiVersion = "apiextensions.k8s.io/v1";
-        kind = "CustomResourceDefinition";
-        metadata = { name = "nixbuilds.build.fyfaen.as"; };
-        spec = {
-          group = "build.fyfaen.as";
-          names = {
-            kind = "NixBuild";
-            plural = "nixbuilds";
-            singular = "nixbuild";
-            shortNames = [ "nb" ];
-          };
-          scope = "Namespaced";
-          versions = [{
-            name = "v1alpha1";
-            served = true;
-            storage = true;
-            schema = {
-              openAPIV3Schema = {
-                type = "object";
-                properties = {
-                  spec = {
-                    type = "object";
-                    properties = {
-                      git_repo = { type = "string"; };
-                      git_ref = {
-                        type = "string";
-                        nullable = true;
-                      };
-                      nix_attr = {
-                        type = "string";
-                        nullable = true;
-                      };
-                      image_name = { type = "string"; };
-                    };
-                    required = [ "git_repo" "image_name" ];
-                  };
-                  status = {
-                    type = "object";
-                    nullable = true;
-                    properties = {
-                      phase = { type = "string"; };
-                      job_name = {
-                        type = "string";
-                        nullable = true;
-                      };
-                      message = {
-                        type = "string";
-                        nullable = true;
-                      };
-                    };
-                  };
-                };
-              };
-            };
-          }];
-        };
-      }
-    }' > $out/crd.yaml
-
-    echo '${
-      builtins.toJSON {
         apiVersion = "apps/v1";
         kind = "Deployment";
         metadata = {
@@ -95,7 +34,7 @@ let
               serviceAccountName = pname;
               containers = [{
                 name = pname;
-                image = "registry.fyfaen.as/nix-build-controller:1.0.15";
+                image = "registry.fyfaen.as/nix-build-controller:1.0.32";
                 env = [{
                   name = "RUST_LOG";
                   value = "info";

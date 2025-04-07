@@ -1,6 +1,9 @@
 use futures::StreamExt;
 use k8s_openapi::api::batch::v1::{Job, JobSpec};
-use k8s_openapi::api::core::v1::{Container, PodSpec, PodTemplateSpec, ResourceRequirements};
+use k8s_openapi::api::core::v1::{
+    Container, EnvVar, EnvVarSource, PodSpec, PodTemplateSpec, ResourceRequirements,
+    SecretKeySelector,
+};
 use k8s_openapi::api::core::v1::{LocalObjectReference, VolumeMount};
 use k8s_openapi::apimachinery::pkg::api::resource::Quantity;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::{ObjectMeta, OwnerReference};
@@ -9,6 +12,7 @@ use kube::{
     Api, Client, Resource, ResourceExt,
 };
 use std::collections::BTreeMap;
+use std::env;
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::time::Duration;
@@ -181,6 +185,7 @@ async fn update_build_status(
 
     Ok(())
 }
+
 fn create_build_job(
     build: &NixBuild,
     name: String,
@@ -189,10 +194,35 @@ fn create_build_job(
     let resources = ResourceRequirements {
         ..ResourceRequirements::default()
     };
-
     let builder = Container {
         name: "builder".to_string(),
-        image: Some("registry.fyfaen.as/nix-builder:1.0.3".to_string()),
+        image: Some("registry.fyfaen.as/nix-builder:1.0.10".to_string()),
+        env: Some(vec![
+            EnvVar {
+                name: "ZOT_USERNAME".to_string(),
+                value_from: Some(EnvVarSource {
+                    secret_key_ref: Some(SecretKeySelector {
+                        name: "zot-creds".to_string(),
+                        key: "ZOT_USERNAME".to_string(),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+            EnvVar {
+                name: "ZOT_PASSWORD".to_string(),
+                value_from: Some(EnvVarSource {
+                    secret_key_ref: Some(SecretKeySelector {
+                        name: "zot-creds".to_string(),
+                        key: "ZOT_PASSWORD".to_string(),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+        ]),
         command: Some(vec![
             "/bin/bash".to_string(),
             "-c".to_string(),
@@ -216,6 +246,30 @@ fn create_build_job(
                     --option extra-substituters http://{} \
                     build .#{} \
                     --post-build-hook /home/nixuser/push-to-cache.sh
+
+                echo "[builder] attempting to build image..."
+                if ! nix build .#image -o result; then
+                    echo "[builder] image not defined, skipping"
+                    exit 0
+                fi
+
+                IMAGE_NAME=$(nix eval .#image.imageName --raw | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9_.-/:' '-' | sed 's/^-*//;s/-*$//' )
+                IMAGE_TAG=$(nix eval .#image.imageTag --raw | tr -c 'a-zA-Z0-9_.-' '-' | cut -c1-128)
+                FULL_TAG="$IMAGE_NAME:$IMAGE_TAG"
+
+
+                echo "[builder] detected image: $FULL_TAG"
+
+                if [ -z "$ZOT_USERNAME" ] || [ -z "$ZOT_PASSWORD" ]; then
+                  echo "[builder] missing credentials, cannot push image"
+                  exit 1
+                fi
+
+                echo "[builder] pushing image to registry"
+                echo "[builder] copying image to registry, to be precise."
+                skopeo copy --dest-creds "$ZOT_USERNAME:$ZOT_PASSWORD" docker-archive:result docker://$FULL_TAG
+
+                echo "[builder] successfully pushed $FULL_TAG to registry"
                 "#,
                 "nix-serve.nixbuilder.svc.cluster.local:3000",
                 build.spec.git_repo,
@@ -275,7 +329,9 @@ async fn main() -> Result<(), Error> {
         "SA token path exists: {}",
         std::path::Path::new("/var/run/secrets/kubernetes.io/serviceaccount/token").exists()
     );
-
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("Failed to install rustls crypto provider");
     tracing::info!("Starting NixBuild controller");
 
     let client = match Client::try_default().await {
