@@ -104,8 +104,8 @@
 
         nix-serve = pkgs.callPackage ./crates/nix-serve-service/nix/k8s.nix { };
 
-        deployer =
-          import ./crates/build-controller/nix/deployer.nix { inherit pkgs; };
+        deploy =
+          import ./crates/build-controller/nix/deploy.nix { inherit pkgs; };
         k8s-ui = import ./crates/build-controller/nix/ui.nix { inherit pkgs; };
         ui-yamls = pkgs.runCommand "k8s-yamls" { } (let
           makeYamlFile = index: resource: ''
@@ -194,7 +194,7 @@
 
         packages = {
           inherit build-controller nix-serve-service nix-serve ui-yamls
-            webhook-yamls controller deployer;
+            webhook-yamls controller deploy;
           build-controller-image = controller.image;
           #          build-controller-chart = controller.nixBuildControllerChart;
         } // lib.optionalAttrs (!pkgs.stdenv.isDarwin) {
