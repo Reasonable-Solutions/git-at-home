@@ -15,6 +15,9 @@ use tracing::{error, info};
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("Failed to install rustls crypto provider");
 
     let client = Client::try_default().await?;
     let nc = async_nats::connect("nats://nats.nats.svc.cluster.local:4222").await?;

@@ -1,17 +1,17 @@
-{ pkgs }:
+{ pkgs ? import <nixpkgs> { } }:
 
-pkgs.writeText "deployer-trivial-k8s.yaml" ''
+pkgs.writeText "deployer-nixbuilder-k8s.yaml" ''
   apiVersion: v1
   kind: ServiceAccount
   metadata:
     name: nix-deployer
-    namespace: trivial
+    namespace: nixbuilder
   ---
   apiVersion: rbac.authorization.k8s.io/v1
   kind: Role
   metadata:
     name: nix-deployer
-    namespace: trivial
+    namespace: nixbuilder
   rules:
     - apiGroups: ["apps"]
       resources: ["deployments"]
@@ -27,11 +27,11 @@ pkgs.writeText "deployer-trivial-k8s.yaml" ''
   kind: RoleBinding
   metadata:
     name: nix-deployer-binding
-    namespace: trivial
+    namespace: nixbuilder
   subjects:
     - kind: ServiceAccount
       name: nix-deployer
-      namespace: trivial
+      namespace: nixbuilder
   roleRef:
     kind: Role
     name: nix-deployer
@@ -41,7 +41,7 @@ pkgs.writeText "deployer-trivial-k8s.yaml" ''
   kind: Deployment
   metadata:
     name: nix-deployer
-    namespace: trivial
+    namespace: nixbuilder
   spec:
     replicas: 1
     selector:
@@ -55,12 +55,8 @@ pkgs.writeText "deployer-trivial-k8s.yaml" ''
         serviceAccountName: nix-deployer
         imagePullSecrets:
           - name: nix-serve-regcred
-        securityContext:
-          runAsUser: 1069
-          runAsGroup: 1069
-          fsGroup: 1069
         containers:
           - name: nix-deployer
-            image: registry.fyfaen.as/nix-deploy:1.0.0
-            command: ["/app/deploy"]
+            image: registry.fyfaen.as/nix-deploy:1.0.1
+            command: ["/app/deployer"]
 ''
