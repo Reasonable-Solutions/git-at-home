@@ -22,7 +22,7 @@ RUN . /home/nixuser/.nix-profile/etc/profile.d/nix.sh && \
 
 FROM debian:sid
 
-RUN apt-get update && apt-get install -y ca-certificates git && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ca-certificates git curl unzip && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
@@ -54,5 +54,10 @@ RUN mkdir -p /etc/containers && \
 
 USER nixuser
 WORKDIR /home/nixuser
+
+RUN curl -L https://github.com/nats-io/natscli/releases/download/v0.2.0/nats-0.2.0-linux-amd64.zip -o nats.zip \
+ && unzip nats.zip \
+ && rm nats.zip
+ENV PATH="/home/nixuser/nats-0.2.0-linux-amd64:${PATH}"
 
 CMD ["nix", "--version"]

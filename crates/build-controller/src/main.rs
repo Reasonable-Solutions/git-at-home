@@ -76,7 +76,6 @@ async fn reconcile(build: Arc<NixBuild>, ctx: Arc<ContextData>) -> Result<Action
                 }
             }
         }
-        // Hmm Something is very fucky here. 6105 pods??
         return Ok(Action::requeue(Duration::from_secs(300)));
     }
 
@@ -194,16 +193,17 @@ fn create_build_job(
     let resources = ResourceRequirements {
         ..ResourceRequirements::default()
     };
+    let image = "registry.fyfaen.as/nix-builder:1.0.12";
     let builder = Container {
-        name: "builder".to_string(),
-        image: Some("registry.fyfaen.as/nix-builder:1.0.10".to_string()),
+        name: "builder".to_owned(),
+        image: Some(image.to_owned()),
         env: Some(vec![
             EnvVar {
-                name: "ZOT_USERNAME".to_string(),
+                name: "ZOT_USERNAME".to_owned(),
                 value_from: Some(EnvVarSource {
                     secret_key_ref: Some(SecretKeySelector {
-                        name: "zot-creds".to_string(),
-                        key: "ZOT_USERNAME".to_string(),
+                        name: "zot-creds".to_owned(),
+                        key: "ZOT_USERNAME".to_owned(),
                         ..Default::default()
                     }),
                     ..Default::default()
@@ -211,11 +211,11 @@ fn create_build_job(
                 ..Default::default()
             },
             EnvVar {
-                name: "ZOT_PASSWORD".to_string(),
+                name: "ZOT_PASSWORD".to_owned(),
                 value_from: Some(EnvVarSource {
                     secret_key_ref: Some(SecretKeySelector {
-                        name: "zot-creds".to_string(),
-                        key: "ZOT_PASSWORD".to_string(),
+                        name: "zot-creds".to_owned(),
+                        key: "ZOT_PASSWORD".to_owned(),
                         ..Default::default()
                     }),
                     ..Default::default()
@@ -224,8 +224,8 @@ fn create_build_job(
             },
         ]),
         command: Some(vec![
-            "/bin/bash".to_string(),
-            "-c".to_string(),
+            "/bin/bash".to_owned(),
+            "-c".to_owned(),
             format!(
                 r#"
                 export PATH="/home/nixuser/.nix-profile/bin:/nix/var/nix/profiles/default/bin:$PATH"
@@ -240,7 +240,7 @@ fn create_build_job(
                 cd workspace
                 {}
                 echo "[builder] starting"
-                /home/nixuser/.nix-profile/bin/nix --extra-experimental-features nix-command --extra-experimental-features flakes \
+                nix --extra-experimental-features nix-command --extra-experimental-features flakes \
                     --option require-sigs false \
                     --option substitute true \
                     --option extra-substituters http://{} \
@@ -270,6 +270,21 @@ fn create_build_job(
                 skopeo copy --dest-creds "$ZOT_USERNAME:$ZOT_PASSWORD" docker-archive:result docker://$FULL_TAG
 
                 echo "[builder] successfully pushed $FULL_TAG to registry"
+
+                echo "[builder] building manifest"
+                nix --extra-experimental-features nix-command --extra-experimental-features flakes \
+                    --option require-sigs false \
+                    --option substitute true \
+                    --option extra-substituters http://nix-serve-nixbuilder.svc.cluster.local:3000 \
+                    build .#manifests --out-link manifests \
+                    --post-build-hook /home/nixuser/push-to-cache.sh
+
+                echo "[builder] publishing deploy message"
+                MANIFEST_CONTENT=$(cat manifests | base64 -w0)
+                nats --server nats://nats.nats.svc.cluster.local:4222 pub deploy.ready '{{
+                  "manifestB64": "'"$MANIFEST_CONTENT"'",
+                  "timestamp": "'"$(date -u +"%Y-%m-%dT%H:%M:%SZ")"'"
+                }}'
                 "#,
                 "nix-serve.nixbuilder.svc.cluster.local:3000",
                 build.spec.git_repo,
