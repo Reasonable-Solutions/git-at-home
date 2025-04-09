@@ -1,9 +1,76 @@
-use axum::{extract::State, http::StatusCode, routing::post, Json, Router};
+use axum::{
+    body::Body,
+    extract::{Path, State},
+    http::StatusCode,
+    response::IntoResponse,
+    routing::{get, post},
+    Json, Router,
+};
 use build_controller::*;
+use bytes::Bytes;
+use futures::io::{AsyncBufReadExt, BufReader};
+use futures::StreamExt;
+use k8s_openapi::api::core::v1::Pod;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
-use kube::{Api, Client, ResourceExt};
+use kube::ResourceExt;
+use kube::{
+    api::{Api, ListParams, LogParams},
+    Client,
+};
 use serde::Deserialize;
+use std::convert::Infallible;
+use std::env;
 use tracing::{self, Level};
+
+pub async fn stream_logs(
+    State(client): State<Client>,
+    Path(id): Path<String>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let pods: Api<Pod> = Api::namespaced(client, "nixbuilder");
+
+    let pod_name = pods
+        .list(&ListParams::default().labels(&format!("job-name=nixbuild-build-{id}")))
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to list pods: {e}"),
+            )
+        })?
+        .items
+        .into_iter()
+        .next()
+        .ok_or((StatusCode::NOT_FOUND, "no pod found for job".to_string()))?
+        .name_any();
+
+    let reader = pods
+        .log_stream(
+            &pod_name,
+            &LogParams {
+                follow: true,
+                ..Default::default()
+            },
+        )
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("failed to get logs: {e}"),
+            )
+        })?;
+    // wtf
+    let lines = BufReader::new(reader).lines();
+
+    let body = Body::from_stream(lines.map(|line| {
+        let line = line.unwrap_or_else(|_| "[log error]".to_string());
+        Ok::<_, Infallible>(Bytes::from(line + "\n"))
+    }));
+
+    Ok(axum::response::Response::builder()
+        .header("Content-Type", "text/plain")
+        .body(body)
+        .unwrap())
+}
 
 #[derive(Debug, Deserialize)]
 struct BuildRequest {
@@ -12,8 +79,6 @@ struct BuildRequest {
     nix_attr: Option<String>,
     image_name: String,
 }
-
-use std::env;
 
 async fn handle_build(
     State(client): State<Client>,
@@ -58,6 +123,10 @@ async fn handle_build(
 
 #[tokio::main]
 async fn main() {
+    rustls::crypto::ring::default_provider()
+        .install_default()
+        .expect("Failed to install rustls crypto provider");
+
     tracing_subscriber::fmt().with_max_level(Level::INFO).init();
     tracing::info!("starting webhook");
 
@@ -67,6 +136,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/trigger-build", post(handle_build))
+        .route("/logs/:id", get(stream_logs))
         .with_state(client);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")

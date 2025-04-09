@@ -40,3 +40,6 @@ rustls = { version = "0.23.25", features = ["ring"] }
 base64 = "0.22.1"
 async-nats = "0.40.0"
 anyhow = "1.0.97"
+bytes = "1.10.1"
+tokio-util = "0.7.14"
+tokio-stream = { version = "0.1.17", features = ["io-util"] }

@@ -8,33 +8,31 @@ pkgs.writeText "deployer-nixbuilder-k8s.yaml" ''
     namespace: nixbuilder
   ---
   apiVersion: rbac.authorization.k8s.io/v1
-  kind: Role
+  kind: ClusterRole
   metadata:
-    name: nix-deployer
-    namespace: nixbuilder
+    name: nix-deployer-global
   rules:
     - apiGroups: ["apps"]
       resources: ["deployments"]
-      verbs: ["get", "list", "watch", "create", "update", "patch"]
+      verbs: ["get", "list", "watch", "patch", "create"]
     - apiGroups: [""]
       resources: ["services"]
-      verbs: ["get", "list", "watch", "create", "update", "patch"]
+      verbs: ["get", "list", "watch", "patch", "create"]
     - apiGroups: ["gateway.networking.k8s.io"]
       resources: ["httproutes"]
-      verbs: ["get", "list", "watch", "create", "update", "patch"]
+      verbs: ["get", "list", "watch", "patch", "create"]
   ---
   apiVersion: rbac.authorization.k8s.io/v1
-  kind: RoleBinding
+  kind: ClusterRoleBinding
   metadata:
-    name: nix-deployer-binding
-    namespace: nixbuilder
+    name: nix-deployer-global-binding
   subjects:
     - kind: ServiceAccount
       name: nix-deployer
       namespace: nixbuilder
   roleRef:
-    kind: Role
-    name: nix-deployer
+    kind: ClusterRole
+    name: nix-deployer-global
     apiGroup: rbac.authorization.k8s.io
   ---
   apiVersion: apps/v1
@@ -57,6 +55,6 @@ pkgs.writeText "deployer-nixbuilder-k8s.yaml" ''
           - name: nix-serve-regcred
         containers:
           - name: nix-deployer
-            image: registry.fyfaen.as/nix-deploy:1.0.1
-            command: ["/app/deployer"]
+            image: registry.fyfaen.as/nix-deploy:1.0.3
+            command: ["./deploy"]
 ''
