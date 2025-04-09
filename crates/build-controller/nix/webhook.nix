@@ -17,7 +17,7 @@ let
             imagePullSecrets = [{ name = "nix-serve-regcred"; }];
             containers = [{
               name = "webhook";
-              image = "registry.fyfaen.as/nix-webhook:1.0.1";
+              image = "registry.fyfaen.as/nix-webhook:1.0.2";
               ports = [{ containerPort = 3000; }];
               env = [{
                 # This should be a projected mount!
@@ -65,11 +65,23 @@ let
         name = "webhook-writer";
         namespace = "nixbuilder";
       };
-      rules = [{
-        apiGroups = [ "build.fyfaen.as" ];
-        resources = [ "nixbuilds" ];
-        verbs = [ "create" ];
-      }];
+      rules = [
+        {
+          apiGroups = [ "build.fyfaen.as" ];
+          resources = [ "nixbuilds" ];
+          verbs = [ "create" ];
+        }
+        {
+          apiGroups = [ "" ];
+          resources = [ "pods" ];
+          verbs = [ "get" "list" ];
+        }
+        {
+          apiGroups = [ "" ];
+          resources = [ "pods/log" ];
+          verbs = [ "get" ];
+        }
+      ];
     };
 
     roleBinding = {
@@ -105,12 +117,20 @@ let
           namespace = "nginx-gateway";
         }];
         rules = [{
-          matches = [{
-            path = {
-              type = "PathPrefix";
-              value = "/trigger-build";
-            };
-          }];
+          matches = [
+            {
+              path = {
+                type = "PathPrefix";
+                value = "/trigger-build";
+              };
+            }
+            {
+              path = {
+                type = "PathPrefix";
+                value = "/logs";
+              };
+            }
+          ];
           backendRefs = [{
             name = "webhook";
             port = 80;
