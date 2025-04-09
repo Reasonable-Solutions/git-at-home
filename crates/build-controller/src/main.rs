@@ -233,9 +233,8 @@ fn create_build_job(
                 echo '#!/usr/bin/env bash' >> /home/nixuser/push-to-cache.sh
                 echo '/home/nixuser/.nix-profile/bin/nix --extra-experimental-features nix-command --extra-experimental-features flakes copy --to http://{} $OUT_PATHS' >> /home/nixuser/push-to-cache.sh
                 chmod +x /home/nixuser/push-to-cache.sh
-                set -ux
+                set -euo pipefail
                 which nix
-                exec > >(tee /mnt/build.log) 2>&1
                 git clone {} workspace
                 cd workspace
                 {}
@@ -266,8 +265,11 @@ fn create_build_job(
                 fi
 
                 echo "[builder] pushing image to registry"
-                echo "[builder] copying image to registry, to be precise."
-                skopeo copy --dest-creds "$ZOT_USERNAME:$ZOT_PASSWORD" docker-archive:result docker://$FULL_TAG
+                if ! skopeo copy --dest-creds "$ZOT_USERNAME:$ZOT_PASSWORD" docker-archive:result docker://$FULL_TAG; then
+                  echo "[builder] skopeo failed" >&2
+                  exit 1
+                fi
+                unset ZOT_USERNAME ZOT_PASSWORD
 
                 echo "[builder] successfully pushed $FULL_TAG to registry"
 
