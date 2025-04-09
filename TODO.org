@@ -9,6 +9,7 @@
 ** Implement git-ssh service with management API
 ** TODO Set up ReadWriteMany PVCs for shared nix store
 ** [#A] Create git-person controller for GitHub pubkey sync
+   or do an ssh-cert dance. E.g sign nonce with good key, get short lived cert.
 ** DONE Implement handsucked cache
 ** DONE Configure large nodes with build-machine taint/dedicated pool
 ** DONE Build nix-serve service with management API
