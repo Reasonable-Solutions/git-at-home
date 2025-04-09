@@ -7,23 +7,22 @@
   - PR tracking
   - Merge handling
 ** Implement git-ssh service with management API
-** Set up ReadWriteMany PVCs for shared nix store
-** Create git-person controller for GitHub pubkey sync
+** TODO Set up ReadWriteMany PVCs for shared nix store
+** [#A] Create git-person controller for GitHub pubkey sync
 ** DONE Implement handsucked cache
-** Configure large nodes with build-machine taint/dedicated pool
-** Build nix-serve service with management API
-** Convert all Dockerfiles to nix
+** DONE Configure large nodes with build-machine taint/dedicated pool
+** DONE Build nix-serve service with management API
+** TODO Convert all Dockerfiles to nix
   - Fix aarch64-linux runner
 ** Builder
 *** Use something other than a string for the job command.
 *** Move push-to-cache outside of the string
-*** Parametrize over image (con: why can you choose image??)
+*** DONE Parametrize over image (con: why can you choose image??)
 *** Post build hooks are blocking, make them async
-*** TODO A SET OF COOL HTMX SERVER THAT DOES KUBECLIENT STUFF FOR RESOURCES RELATED TO BUILDS, TIED TOGETHER OVER THE GATEWAYAPI
-**** FIX UP THE GODAMNED HTTPROUTE SHIT SOMETING IS VERY BROKEN I HATE IT
-**** Dont create a new client for every request, that's silly
-*** Build a upload to oci for anything
-** nix-serve
+*** DONE A little dashboard
+*** TODO Dont create a new client for every request, that's silly
+*** TODO Build a upload to oci for anything
+** DONE nix-serve
 *** Some sorta gc other than dropping the pvc?
 *** in-memory cache of narinfo, inotify driven(?)
 *** sendfile, large buffers (8mb for in cluster? nodelay) etc.
