@@ -55,6 +55,6 @@ pkgs.writeText "deployer-nixbuilder-k8s.yaml" ''
           - name: nix-serve-regcred
         containers:
           - name: nix-deployer
-            image: registry.fyfaen.as/nix-deploy:1.0.3
+            image: registry.fyfaen.as/nix-deploy:1.0.4
             command: ["./deploy"]
 ''

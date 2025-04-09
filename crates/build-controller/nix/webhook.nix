@@ -17,7 +17,7 @@ let
             imagePullSecrets = [{ name = "nix-serve-regcred"; }];
             containers = [{
               name = "webhook";
-              image = "registry.fyfaen.as/nix-webhook:1.0.2";
+              image = "registry.fyfaen.as/nix-webhook:1.0.4";
               ports = [{ containerPort = 3000; }];
               env = [{
                 # This should be a projected mount!
@@ -69,7 +69,7 @@ let
         {
           apiGroups = [ "build.fyfaen.as" ];
           resources = [ "nixbuilds" ];
-          verbs = [ "create" ];
+          verbs = [ "create" "list" "get" ];
         }
         {
           apiGroups = [ "" ];
@@ -128,6 +128,12 @@ let
               path = {
                 type = "PathPrefix";
                 value = "/logs";
+              };
+            }
+            {
+              path = {
+                type = "PathPrefix";
+                value = "/status";
               };
             }
           ];

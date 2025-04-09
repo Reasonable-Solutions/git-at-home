@@ -22,6 +22,54 @@ use std::convert::Infallible;
 use std::env;
 use tracing::{self, Level};
 
+async fn status(
+    State(client): State<Client>,
+    Path(id): Path<String>,
+) -> Result<impl IntoResponse, (StatusCode, String)> {
+    let builds: Api<NixBuild> = Api::namespaced(client, "nixbuilder");
+
+    let build = builds.get(&id).await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to get build: {e}"),
+        )
+    })?;
+
+    let status = match &build.status {
+        Some(status) => status,
+        None => {
+            return Ok((
+                StatusCode::OK,
+                [(axum::http::header::CONTENT_TYPE, "application/json")],
+                serde_json::to_string(&serde_json::json!({
+                    "id": id,
+                    "status": "pending",
+                    "message": "Build status not yet available",
+                    "conditions": []
+                }))
+                .unwrap(),
+            ))
+        }
+    };
+
+    Ok((
+        StatusCode::OK,
+        [(axum::http::header::CONTENT_TYPE, "application/json")],
+        serde_json::to_string(&serde_json::json!({
+            "id": id,
+            "status": status.phase,
+            "message": status.message,
+            "job_name": status.job_name,
+            "conditions": status.conditions,
+            "observed_generation": status.observed_generation,
+            "last_transition_time": status.last_transition_time,
+            "creation_timestamp": build.metadata.creation_timestamp,
+            "resource_version": build.metadata.resource_version
+        }))
+        .unwrap(),
+    ))
+}
+
 pub async fn stream_logs(
     State(client): State<Client>,
     Path(id): Path<String>,
@@ -137,6 +185,7 @@ async fn main() {
     let app = Router::new()
         .route("/trigger-build", post(handle_build))
         .route("/logs/:id", get(stream_logs))
+        .route("/status/:id", get(status))
         .with_state(client);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")

@@ -1,13 +1,16 @@
 use anyhow::{Context, Result};
+use async_nats; // No need to import Connection directly
 use base64::engine::general_purpose::STANDARD as b64;
 use base64::Engine;
 use futures::StreamExt;
+use k8s_openapi::chrono;
 use k8s_openapi::serde_json::Value;
 use kube::discovery::Discovery;
 use kube::{
     api::{DynamicObject, Patch, PatchParams},
     Api, Client,
 };
+use serde_json::json;
 use serde_yaml;
 use tracing::{error, info};
 
@@ -42,7 +45,7 @@ async fn main() -> Result<()> {
     info!("[deployer] waiting for messages on deploy.ready");
 
     while let Some(msg) = sub.next().await {
-        match handle_message(&client, &msg.payload).await {
+        match handle_message(&client, &msg.payload, &nc).await {
             Ok(_) => info!("[deployer] message handled successfully"),
             Err(err) => error!(?err, "[deployer] error handling message"),
         }
@@ -51,7 +54,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn handle_message(client: &Client, data: &[u8]) -> Result<()> {
+async fn handle_message(client: &Client, data: &[u8], nc: &async_nats::Client) -> Result<()> {
     info!(
         "[deployer] received raw message: {}",
         String::from_utf8_lossy(data)
@@ -63,13 +66,18 @@ async fn handle_message(client: &Client, data: &[u8]) -> Result<()> {
         .context("missing manifestB64 field")?;
     let manifest_bytes = b64.decode(b64_str)?;
     let manifest_str = std::str::from_utf8(&manifest_bytes)?;
-
+    let build_name = v["build_name"].as_str().unwrap_or("unknown-build");
     info!("[deployer] decoded manifest, applying...");
-    apply_from_manifest_str(client, manifest_str).await?;
+    apply_from_manifest_str(client, manifest_str, build_name, nc).await?;
     Ok(())
 }
 
-async fn apply_from_manifest_str(client: &Client, manifest: &str) -> Result<()> {
+async fn apply_from_manifest_str(
+    client: &Client,
+    manifest: &str,
+    build_name: &str,
+    nc: &async_nats::Client,
+) -> Result<()> {
     let discovery = Discovery::new(client.clone()).run().await?;
 
     for doc in manifest.split("---") {
@@ -90,7 +98,7 @@ async fn apply_from_manifest_str(client: &Client, manifest: &str) -> Result<()> 
 
         info!(%kind, %name, %api_version, %namespace, "[deployer] applying resource");
 
-        let (group, version) = match api_version.split_once('/') {
+        let (group, _version) = match api_version.split_once('/') {
             Some((g, v)) => (g, v),
             None => ("", api_version),
         };
@@ -106,15 +114,48 @@ async fn apply_from_manifest_str(client: &Client, manifest: &str) -> Result<()> 
 
         let api: Api<DynamicObject> = Api::namespaced_with(client.clone(), namespace, &ar);
 
-        api.patch(
-            name,
-            &PatchParams::apply("nix-build-deployer").force(),
-            &Patch::Apply(val.clone()),
-        )
-        .await
-        .context(format!("failed to apply {kind}/{name}"))?;
-
-        info!(%kind, %name, "[deployer] successfully applied");
+        match api
+            .patch(
+                name,
+                &PatchParams::apply("nix-build-deployer").force(),
+                &Patch::Apply(val.clone()),
+            )
+            .await
+        {
+            Ok(_) => {
+                info!(%kind, %name, "[deployer] successfully applied");
+                send_deployment_status(&nc, build_name, "Deployed", "Deployment completed").await?;
+            }
+            Err(err) => {
+                error!(?err, "[deployer] failed to apply resource");
+                send_deployment_status(&nc, build_name, "Failed", "Deployment failed").await?;
+            }
+        }
     }
+
+    Ok(())
+}
+async fn send_deployment_status(
+    nc: &async_nats::Client,
+    build_name: &str,
+    status: &str,
+    message: &str,
+) -> Result<()> {
+    let status_message = json!({
+        "build_name": build_name,
+        "status": status,
+        "message": message,
+        "timestamp": chrono::Utc::now().to_rfc3339()
+    });
+
+    let status_payload = serde_json::to_vec(&status_message)?;
+    let subject = "deploy.status.nixbuilder".to_owned();
+
+    nc.publish(subject, status_payload.into())
+        .await
+        .context("failed to publish build status to NATS")?;
+
+    info!("[deployer] sent build status: {} {}", build_name, status);
+
     Ok(())
 }

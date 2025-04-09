@@ -98,3 +98,10 @@ impl NixBuildStatus {
         }
     }
 }
+
+#[derive(Deserialize, Debug)]
+pub struct DeployStatusMessage {
+    pub build_name: String,
+    pub status: String,
+    pub message: String,
+}
