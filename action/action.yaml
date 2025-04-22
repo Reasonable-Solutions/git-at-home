@@ -1,0 +1,74 @@
+name: trigger-deploy
+description: "deploy"
+
+inputs:
+  git_repo:
+    description: "git repo to deploy"
+    required: true
+  git_ref:
+    description: "git ref to deploy"
+    required: true
+  nix_attr:
+    description: "nix attribute to build"
+    required: false
+    default: null
+  deploy_key:
+    description: "webhook secret"
+    required: true
+
+outputs:
+  build_status:
+    description: "Final status of the build"
+  build_message:
+    description: "Build system message"
+
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        set -euo pipefail
+        echo "triggering build"
+        ID=$(curl -s -XPOST \
+          -H "x-webhook-token: ${{ inputs.deploy_key }}" \
+          -H "Content-Type: application/json" \
+          -d "$(jq -n --arg git_repo "${{ inputs.git_repo }}" --arg git_ref "${{ inputs.git_ref }}" --arg nix_attr "${{ inputs.nix_attr }}" '{git_repo: $git_repo, git_ref: $git_ref, nix_attr: $nix_attr, image_name: "field is not used here"}')" \
+          https://nix.fyfaen.as/trigger-build)
+
+        echo "build_id=$ID" >> "$GITHUB_ENV"
+        echo "id=$ID" >> "$GITHUB_OUTPUT"
+
+    - run: sleep 5
+
+    - run: |
+        id="${{ env.build_id#build- }}"
+        echo "streaming logs..."
+        curl --no-buffer https://nix.fyfaen.as/logs/$id
+
+    - id: check_status
+      run: |
+        id="${{ env.build_id }}"
+        echo "waiting for build to complete..."
+        STATUS="pending"
+        MAX_ATTEMPTS=60
+        ATTEMPT=0
+
+        while [ "$STATUS" != "Completed" ] && [ "$STATUS" != "Deployed" ] && [ "$STATUS" != "Failed" ] && [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+          ATTEMPT=$((ATTEMPT+1))
+          RESPONSE=$(curl -s https://nix.fyfaen.as/status/$id)
+          STATUS=$(echo $RESPONSE | jq -r '.status')
+          echo "current status: $STATUS (attempt $ATTEMPT/$MAX_ATTEMPTS)"
+          sleep 10
+        done
+
+        MESSAGE=$(echo $RESPONSE | jq -r '.message')
+
+        echo "build_status=$STATUS" >> "$GITHUB_OUTPUT"
+        echo "build_message=$MESSAGE" >> "$GITHUB_OUTPUT"
+
+        if [ "$STATUS" == "Failed" ]; then
+          echo "build failed: $MESSAGE"
+          exit 1
+        elif [ "$ATTEMPT" -ge "$MAX_ATTEMPTS" ]; then
+          echo "build timed out after 10 minutes"
+          exit 1
+        fi
