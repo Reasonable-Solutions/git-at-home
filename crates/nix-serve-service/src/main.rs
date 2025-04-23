@@ -9,9 +9,13 @@ use axum::{
 use futures::StreamExt;
 use tokio::fs;
 use tokio::io::AsyncWriteExt;
-use tokio_util;
 use tracing::{error, info, warn, Level};
 use uuid::{self, Uuid};
+
+struct Config {
+    signing_key: String,
+    cache_dir: String,
+}
 
 // TODO: What is a sensible priority value? why does the cache hav it?
 async fn get_cache_info() -> &'static str {
@@ -19,8 +23,6 @@ async fn get_cache_info() -> &'static str {
     "StoreDir: /nix/store\nWantMassQuery: 1\nPriority: 20"
 }
 
-// These could just be generated on the fly. A narinfo is just a few lines describing a
-// narfile
 async fn disk_get_narinfo(Path(hash): Path<String>) -> Result<String, StatusCode> {
     info!(hash = %hash, "Fetching narinfo");
     match fs::read_to_string(format!("nar/{}", hash)).await {
@@ -48,7 +50,9 @@ async fn disk_get_nar(
         }
     }
 }
-
+// TODO: The NARINFO stuff should have a few things going for it
+// 1. It should verify the signature from the builders ephemeral keys - Builder-Sig: <signature>
+// 2. If that verification checks out, the cache (this service!) should sign the narinfo with the cache key - Sig: <signature>
 async fn disk_put_narinfo(Path(hash): Path<String>, body: String) -> StatusCode {
     info!(hash = %hash, size = body.len(), "Uploading narinfo");
     match fs::write(format!("nar/{}", hash), body).await {
@@ -131,6 +135,28 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
+impl NixCacheStorage for DiskStorage {
+    async fn get_narinfo(&self, hash: &str) -> Result<String, StatusCode> {
+        disk_get_narinfo("foo"").await
+    }
+
+    async fn put_narinfo(&self, hash: &str, content: String) -> Result<(), StatusCode> {
+        disk_put_narinfo().await
+    }
+
+    async fn get_nar(&self, hash: &str) -> Result<Bytes, StatusCode> {
+        disk_get_nar().await
+    }
+
+    async fn put_nar(&self, hash: &str, content: axum::body::Body) -> Result<(), StatusCode> {
+        disk_put_nar().await
+    }
+}
+
+struct DiskStorage {
+    base_dir: String
+}
+
 trait NixCacheStorage {
     async fn get_narinfo(&self, hash: &str) -> Result<String, StatusCode>;
     async fn put_narinfo(&self, hash: &str, content: String) -> Result<(), StatusCode>;
@@ -146,16 +172,13 @@ struct S3Storage {
 }
 
 use axum::body::Body;
-use bytes::Bytes;
 use s3::{creds::Credentials, request::ResponseData, Bucket, Region};
-use std::io::Cursor;
-use tokio::io::AsyncReadExt;
 
 impl NixCacheStorage for S3Storage {
     async fn get_narinfo(&self, hash: &str) -> Result<String, StatusCode> {
         let region = Region::Custom {
-            region: "eu-central-1".to_owned(), // Adjust for Hetzner
-            endpoint: "https://s3.eu-central-1.amazonaws.com".to_owned(), // Adjust endpoint for Hetzner
+            region: "eu-central-1".to_owned(), // Adjust for Hetzner, wtf is it called
+            endpoint: "https://s3.eu-central-1.amazonaws.com".to_owned(), // Is config
         };
 
         let credentials = Credentials::new(
