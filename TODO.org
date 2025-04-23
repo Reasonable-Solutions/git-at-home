@@ -17,6 +17,7 @@ Ephemeral keys and cache keys
 ** DONE Build nix-serve service with management API
 ** TODO Convert all Dockerfiles to nix
   - Fix aarch64-linux runner
+** Make the deployer and build handle "Apps"
 ** Builder
 *** Use something other than a string for the job command.
 *** Move push-to-cache outside of the string
