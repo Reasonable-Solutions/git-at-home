@@ -269,9 +269,7 @@ fn create_build_job(
                 chmod +x /home/nixuser/push-to-cache.sh
                 set -euo pipefail
                 which nix
-                git clone {} workspace
-                cd workspace
-                {}
+
 
                 publish_status "Building" "Populating cache"
                 echo "[builder] starting"
@@ -310,7 +308,7 @@ fn create_build_job(
                     exit 1
                 fi
 
-                echo "[builder] pushing image to registry"
+                echo "[builder] pushing image to registry" # Move this out into a separate job or like an on-the-fly image realizer
                 if ! skopeo copy --dest-creds "$ZOT_USERNAME:$ZOT_PASSWORD" docker-archive:result docker://$FULL_TAG; then
                     publish_status "Failed" "Skopeo copy failed"
                     echo "[builder] skopeo failed" >&2
@@ -326,7 +324,7 @@ fn create_build_job(
                     --option substitute true \
                     --option extra-substituters http://nix-serve-nixbuilder.svc.cluster.local:3000 \
                     build .#manifests --out-link manifests \
-                    --post-build-hook /home/nixuser/push-to-cache.sh
+                    --post-build-hook /home/nixuser/push-to-cache.sh ## TODO: Replace this with a fifo and like 4 workers instead of blocking on curl
 
                 echo "[builder] publishing deploy message"
                 MANIFEST_CONTENT=$(cat manifests | base64 -w0)
@@ -339,13 +337,6 @@ fn create_build_job(
                 publish_status "Deploying" "Build proccess completed successfully "
                 "#,
                 "nix-serve.nixbuilder.svc.cluster.local:3000",
-                build.spec.git_repo,
-                build
-                    .spec
-                    .git_ref
-                    .as_ref()
-                    .map(|r| format!("git checkout {}", r))
-                    .unwrap_or_default(),
                 "nix-serve.nixbuilder.svc.cluster.local:3000",
                 build
                     .spec
